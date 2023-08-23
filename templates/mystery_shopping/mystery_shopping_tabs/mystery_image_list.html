@@ -1,0 +1,183 @@
+{% load static %}
+<div class="row">
+    <div class="col-md-12">
+        <div class="card p-2">
+            <div class="table-responsive">
+                <table class="table no-wrap user-table mb-0">
+                    <thead>
+                        <tr>
+                            <th scope="col" class="border-0 text-bold" style="width: 20%;"> Center </th>
+                            <th scope="col" class="border-0 text-bold" style="width: 35%;"> Description </th>
+                            <th scope="col" class="border-0 text-bold" style="width: 35%;"> Preview </th>
+                            <th scope="col" class="border-0 text-bold" style="width: 5%;"> Action </th>
+                            <!-- <th scope="col" class="border-0 text-bold" style="width: 30%;"> Image </th> -->
+                        </tr>
+                    </thead>
+                    <tbody> 
+                        {% for image in all_mystery_image %} 
+                        <tr>
+                            <td style="white-space: normal;">
+                                <span class="text-muted">
+                                    {{image.center|default_if_none:'' }} <br>
+                                    {{image.mystery_shopping.month_of_audit.month|default_if_none:'' }} <br>
+                                    <b>ID: {{image.mystery_shopping.id}}</b>
+                                </span>
+                            </td>
+                            <td style="white-space: normal;">
+                                {% if staffProfile.user_type == 'staff'  %}
+                                <span>{{image.description|default_if_none:'' }}</span><br>
+                                {{image.image.name}}
+                                {% else %}
+                                <span class="text-muted" id="img-text-section_{{image.id}}">
+                                    <i class="fas fa-pencil-alt" id="image-input-show-hide-btn_{{image.id}}" onclick="open_img_description_input(this)"></i>
+                                    <span id="img_description_{{image.id}}">{{image.description|default_if_none:'' }}</span><br>
+                                </span>
+                                {{image.image.name}}
+                                <span id="img-edit-box-section_{{image.id}}" class="d-none">
+                                    <textarea class="form-control" id="image-edit-desc-input_{{image.id}}" rows="2">{{image.description|default_if_none:''}}</textarea>
+                                    <button class="btn-sx btn-success float-right" id="image-edit-desc-btn_{{image.id}}" onclick="edit_img_description(this)">
+                                        <!-- <i class="fas fa-check"></i> -->
+                                        Save
+                                    </button>
+                                </span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <a href="{{image.image.url}}" target="_blank">
+                                    {% if '.png' in image.image.name or '.jpeg' in image.image.name or '.jpg' in image.image.name or '.gif' in image.image.name or '.PNG' in image.image.name or '.JPG' in image.image.name or '.JPEG' in image.image.name %} 
+                                    <img src="{{image.image.url}}" alt="" height="50" width="50"> 
+                                    {% else %}
+                                    Open
+                                    {% endif %} 
+                                </a>
+                            </td>
+                            <td>
+                                <a class="btn btn-info" href="{{image.image.url}}" download>
+                                    <i class="fas fa-download"></i></a>
+                            </td>
+                            <!-- <td style="white-space: normal;">
+                                <span class="text-muted">
+                                    <img src="{{image.image.url}}" alt="" data-toggle="modal" data-target="#image_modal_{{image.id}}" height="100" width="100">
+                                </span>
+                            </td> -->
+                        </tr>
+                        <!-- <div class="modal fade" id="image_modal_{{image.id}}" tabindex="-1" role="dialog" aria-labelledby="exampleModalCenterTitle" aria-hidden="true">
+                            <div class="modal-dialog modal-lg modal-dialog-centered" role="document">
+                                <div class="modal-content">
+                                    <div class="modal-header">
+                                        <h5 class="modal-title text-info" id="exampleModalLongTitle">
+                                            {{image.description|default_if_none:'' }} 
+                                            <span>
+                                                <a class="btn btn-danger btn-round" href="{{image.image.url}}" download>
+                                                    <i class="fas fa-download"></i></a>
+                                            </span>
+                                        </h5>
+                                        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                            <span aria-hidden="true">&times;</span>
+                                        </button>
+                                    </div>
+                                    <div class="modal-body">
+                                        <div class="row justify-content-center">
+                                            <div style="height: 500px;">
+                                                <img src="{{image.image.url}}" alt="" style="max-width: 100%; max-height: 100%;">
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div> -->
+                        {% endfor %} 
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<div> 
+    {% if all_mystery_image.paginator.num_pages > 1%} <!-- Paginator -->
+    <nav aria-label="Page navigation example">
+        <ul class="pagination justify-content-center">
+            <li class="page-item {% if not all_mystery_image.has_previous %} disabled {% endif %}">
+                <a class="page-link" href="?page_3=1{% for key,value in request.GET.items %}{% if key != 'page_3' %}&{{ key }}={{ value }}{% endif %}{% endfor %}" tabindex="-1">FIRST</a>
+            </li>
+            <li class="page-item {% if not all_mystery_image.has_previous %} disabled {% endif %}">
+                <a class="page-link" href="{% if all_mystery_image.has_previous %}?page_3={{ all_mystery_image.previous_page_number }}{% for key,value in request.GET.items %}{% if key != 'page_3' %}&{{ key }}={{ value }}{% endif %}{% endfor %}{% endif %} " tabindex="-1">&laquo;</a>
+            </li> {% if all_mystery_image.number|add:'-4' > 1 %} <li class="page-item disabled">
+                <a class="page-link" href="?page_3={{ all_mystery_image.number|add:'-5' }}{% for key,value in request.GET.items %}{% if key != 'page_3' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">&hellip;</a>
+            </li> {% endif %} {% for i in all_mystery_image.paginator.page_range %} {% if all_mystery_image.number == i %} <li class="active page-item current ">
+                <a class="page-link" href="?page_3={{ i }}{% for key,value in request.GET.items %}{% if key != 'page_3' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">{{ i }}</a>
+            </li> {% elif i > all_mystery_image.number|add:'-5' and i < all_mystery_image.number|add:'5' %} <li class="page-item">
+                <a class="page-link" href="?page_3={{ i }}{% for key,value in request.GET.items %}{% if key != 'page_3' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">{{ i }}</a>
+                </li> {% endif %} {% endfor %} {% if all_mystery_image.paginator.num_pages > all_mystery_image.number|add:'4' %} <li class="page-item disabled">
+                    <a class="page-link" href="?page_3={{ all_mystery_image.number|add:'5' }}{% for key,value in request.GET.items %}{% if key != 'page_3' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">&hellip;</a>
+                </li> {% endif %} <li class="page-item {% if not all_mystery_image.has_next %} disabled {% endif %}">
+                    <a class="page-link" href="{% if all_mystery_image.has_next %} ?page_3={{ all_mystery_image.next_page_number }}{% for key,value in request.GET.items %}{% if key != 'page_3' %}&{{ key }}={{ value }}{% endif %}{% endfor %} {% endif %}">&raquo;</a>
+                </li>
+                <li class="page-item {% if not all_mystery_image.has_next %} disabled {% endif %}">
+                    <a class="page-link" href="{% if all_mystery_image.has_next %} ?page_3={{ all_mystery_image.paginator.num_pages }}{% for key,value in request.GET.items %}{% if key != 'page_3' %}&{{ key }}={{ value }}{% endif %}{% endfor %} {% endif %}">LAST</a>
+                </li>
+        </ul>
+    </nav> 
+    {% endif %}
+</div>
+
+<script>
+    function open_img_description_input(t){
+        var img_id = t.id.split('_')[1];
+        document.getElementById('img-text-section_'+img_id).classList.add('d-none');
+        document.getElementById('img-edit-box-section_' + img_id).classList.remove('d-none');
+    }
+
+    function edit_img_description(t){
+        $('#cover-spin').show(0);
+        var img_id = t.id.split('_')[1];
+        var description = document.getElementById('image-edit-desc-input_'+img_id).value;
+        var final_list = [];
+        try {
+            img_query = {
+                "img_id": img_id,
+                "img_disc": description,
+            }
+            if (img_query.img_id.length > 0) {
+                final_list.push(img_query);
+            } else {
+                $('#cover-spin').hide(0);
+                alert('Something Went Wrong, please try again after refreshing the page');
+            }
+
+        } catch (e) { }
+        fetch("/edit_mystery_file_description/", {
+            method: "POST",
+            body: JSON.stringify({
+                'data_obj': final_list,
+            }),
+            // Adding headers to the request
+            headers: {
+                "Content-type": "application/json",
+                "X-CSRFToken": "{{ csrf_token }}",
+            },
+        })
+            .then((response) => {
+                if (response.redirected) {
+                    window.location.href = response.url;
+                    return;
+                }
+                return response.json();
+            })
+            .then((data) => {
+                if (data.msg == 'success') {
+                    $('#cover-spin').hide(0);
+                    document.getElementById('img_description_' + img_id).innerHTML = description;
+                    document.getElementById('img-edit-box-section_' + img_id).classList.add('d-none');
+                    document.getElementById('img-text-section_' + img_id).classList.remove('d-none');
+                }
+                else {
+                    $('#cover-spin').hide(0);
+                    alert('Something went wrong, Please try again after refreshing the page')
+                }
+            });
+    }
+
+</script>

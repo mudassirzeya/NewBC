@@ -1,0 +1,575 @@
+{% load mystery_extras %} 
+<style>
+    .detail_table thead {
+        position: sticky;
+        top: 0;
+        /* background-color: rgb(151 112 112); */
+        z-index: 1;
+    }
+
+    #table-container {
+        position: relative;
+        overflow: auto;
+    }
+
+    #table-container.fullscreen {
+        position: fixed;
+        top: 0;
+        left: 0;
+        height: 100%;
+        width: 100%;
+        z-index: 100;
+    }
+
+    #table-container.fullscreen table {
+        height: 100%;
+        width: 100%;
+    }
+
+    #myButton {
+        position: fixed;
+        top: 20px;
+        z-index: 5000;
+        right: 20px;
+    }
+</style>
+<button class="btn btn-danger d-none" id="myButton" onclick="exit_full_screen()"><i class=" fas fa-compress"></i></button>
+<div class="row justify-content-end mr-2 p-2">
+    <div class="mr-2 p-2">
+        {{detail_start_index}} - {{detail_end_index}} of {{detail_total}}
+    </div>
+    <form action="" method="post"> 
+        {% csrf_token %} 
+        <input type="hidden" name="slr_salon_atr_csv">
+        <button class="btn btn-success" type="" onclick="this.form.submit(); this.innerHTML = 'Downloading...';">
+            <i class="fas fa-download"></i> CSV
+        </button>
+    </form>&nbsp; 
+    <div>
+        <div class="btn-group">
+            <button type="button" class="btn btn-info dropdown-toggle dropdown-toggle-split" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false"> Columns </button>
+            <div class="dropdown-menu p-2" style="font-size: medium;">
+                <span class="dropdown-item p-0"><input type="checkbox" id="select-all-checkbox" checked> <label>Select All</label></span>
+                <span class="dropdown-item p-0"><input type="checkbox" class="toggle" id="column-1-checkbox" data-col="1" checked> <label>Center</label></span>
+                <span class="dropdown-item p-0"><input type="checkbox" class="toggle" id="column-2-checkbox" data-col="2" checked> <label>Audit By</label></span>
+                <span class="dropdown-item p-0"><input type="checkbox" class="toggle" id="column-3-checkbox" data-col="3" checked> <label>Detail</label></span>
+                <span class="dropdown-item p-0"><input type="checkbox" class="toggle" id="column-4-checkbox" data-col="4" checked> <label>Methodology</label></span>
+                <span class="dropdown-item p-0"><input type="checkbox" class="toggle" id="column-5-checkbox" data-col="5" checked> <label>Checklist</label></span>
+                <span class="dropdown-item p-0"><input type="checkbox" class="toggle" id="column-6-checkbox" data-col="6" checked> <label>Person Responsible</label></span>
+                <span class="dropdown-item p-0"><input type="checkbox" class="toggle" id="column-7-checkbox" data-col="7" checked> <label> Compliance</label></span>
+                <span class="dropdown-item p-0"><input type="checkbox" class="toggle" id="column-8-checkbox" data-col="8" checked> <label>Auditor Remarks</label></span>
+                <span class="dropdown-item p-0"><input type="checkbox" class="toggle" id="column-9-checkbox" data-col="9" checked> <label>Audit Status</label></span>
+                <span class="dropdown-item p-0"><input type="checkbox" class="toggle" id="column-10-checkbox" data-col="10" checked> <label>Comment for auditor</label></span>
+                <span class="dropdown-item p-0"><input type="checkbox" class="toggle" id="column-11-checkbox" data-col="11" checked> <label>Action taken By POC</label></span>
+                <span class="dropdown-item p-0"><input type="checkbox" class="toggle" id="column-12-checkbox" data-col="12" checked> <label>Status by POC</label></span>
+                <span class="dropdown-item p-0"><input type="checkbox" class="toggle" id="column-13-checkbox" data-col="13" checked> <label>Remark by POC</label></span>
+                <span class="dropdown-item p-0"><input type="checkbox" class="toggle" id="column-14-checkbox" data-col="14" checked> <label>Action Taken By Management</label></span>
+                <span class="dropdown-item p-0"><input type="checkbox" class="toggle" id="column-15-checkbox" data-col="15" checked> <label>Remark By Management</label></span>
+                <span class="dropdown-item p-0"><input type="checkbox" class="toggle" id="column-16-checkbox" data-col="16" checked> <label>Expected Dept/Personnel to Intervene</label></span>
+                <span class="dropdown-item p-0"><input type="checkbox" class="toggle" id="column-17-checkbox" data-col="17" checked> <label>Remark By Department</label></span>
+                <span class="dropdown-item p-0"><input type="checkbox" class="toggle" id="column-18-checkbox" data-col="18" checked> <label>Status By Department</label></span>
+            </div>
+        </div>
+    </div>&nbsp; 
+    <div>
+        <button class="btn btn-info" id="expand-btn" onclick="expandTable()"><i class="fas fa-expand"></i></button>
+    </div>
+</div>
+<div class="row p-4">
+    <div class="table-responsive" id="table-container" style="height: 100%">
+        <table id="myTable" class="table detail_table table-striped table-bordered" style="background-color: white;">
+            <thead style="background-color: white;">
+                <tr>
+                    <th id="col1" style="min-width: 150px"> Center </th> 
+                    <th id="col2" style="min-width: 150px"> Audit By </th>
+                    <th id="col3" style="min-width: 150px"> Detail </th>
+                    <th id="col4" style="min-width: 250px"> Methodology </th>
+                    <th id="col5" style="min-width: 250px"> Checklist </th>
+                    <th id="col6" style="min-width: 200px">Person Responsible</th>
+                    <th id="col7" style="min-width: 100px">Compliance</th>
+                    <th id="col8" style="min-width: 200px"> Auditor Remarks </th>
+                    <!-- <th style="min-width: 100px"> Status</th> --> 
+                    <th id="col9" style="min-width: 200px;">Audit Status</th>
+                    <th id="col10" style="min-width: 200px;">Comment for auditor</th> 
+                    <th id="col11" style="min-width: 200px;">Action taken By POC</th>
+                    <th id="col12" style="min-width: 200px;">Status by POC</th>
+                    <th id="col13" style="min-width: 200px;">Remark by POC</th> 
+                    <th id="col14" style="min-width: 200px;">Action Taken By Management</th>
+                    <th id="col15" style="min-width: 200px;">Remark By Management</th>
+                    <th id="col16" style="min-width: 200px;">Expected Dept/Personnel to Intervene</th>
+                    <th id="col17" style="min-width: 200px;">Remark By Department</th>
+                    <th id="col18" style="min-width: 200px;">Status By Department</th> 
+                </tr>
+            </thead>
+            <tbody> 
+                {% for slr_atr in all_slr_atr %} 
+                <tr>
+                    <td class="col1" style="white-space: normal;">
+                        <span class="text-muted">
+                            {{slr_atr.center|default_if_none:'' }} <br>
+                            {{slr_atr.month_of_audit.month|default_if_none:'' }}
+                        </span>
+                    </td> 
+                    <td class="col2" style="white-space: normal;">
+                        <span class="text-muted">
+                            {{slr_atr.slr_audit.auditor_name|default_if_none:''}}
+                        </span>
+                    </td>
+                    <td class="col3" style="white-space: normal;">
+                        <span class="text-muted">
+                            {{slr_atr.kra_responsible|default_if_none:'' }} <br>
+                            {{slr_atr.protocol|default_if_none:'' }} </span>
+                    </td>
+                    <td class="col4" style="white-space: normal;">
+                        <span class="text-muted" style="white-space: pre-wrap;">{{slr_atr.methodology|default_if_none:'' }}</span>
+                    </td>
+                    <td class="col5" style="white-space: normal;">
+                        <span class="text-muted" style="white-space: pre-wrap;"><b>{{slr_atr.slr_audit.id}} - {{slr_atr.sequence}}</b><br>{{slr_atr.checklist|default_if_none:'' }}
+                        </span>
+                    </td>
+                    <td class="col6" style="white-space: normal;">
+                        <div class="" id="user_resp_div_{{slr_atr.id}}">  
+                            <input class="form-control" type="text" id="search-box_{{slr_atr.id}}" placeholder="Search..." onchange="user_searchBox('{{slr_atr.id}}')" style="display: none;">
+                            <select class="form-control" name="user_responsible" id="employee-select_{{slr_atr.id}}" onchange="edit_extra_slr_data(this, '{{slr_atr.id}}')" style="display: none;" 
+                            {% if slr_atr.compliance == 'NA' %} disabled {% endif %}>
+                                <option value=""></option>
+                            </select> 
+                            <span class="text-muted" id="emp-text_{{slr_atr.id}}">
+                                {{slr_atr.person_responsible.zenoti_data.employee_name|default_if_none:''}} &nbsp; 
+                            </span>  
+                            {% if not slr_atr.compliance == 'NA' %} 
+                            <div class="float-right mt-1">
+                                <button class="btn btn-sm btn-link" id="edbtn_{{slr_atr.id}}" onclick="toggle_user_reponsible_search(this)">
+                                    <i class="fas fa-pencil-alt"></i>
+                                </button>
+                            </div> 
+                            {% endif %}
+                        </div>
+                    </td>
+                    <td class="col7" style="white-space: normal;"> 
+                        <select class="form-control p-0" name="atr_complience" id="complience_{{slr_atr.id}}" onchange="edit_extra_slr_data(this, '{{slr_atr.id}}')">
+                            <option value="">Select</option> 
+                            {% for compliance in slr_atr.compliance_dropdown|split:"," %} 
+                            <option {% if slr_atr.compliance == compliance %} selected {% endif %} value="{{compliance}}">{{compliance}}</option> 
+                            {% endfor %}
+                        </select> 
+                        {% if slr_atr.compliance_category %} 
+                        <h4>
+                            <span id="ms_compliance_category_{{slr_atr.id}}" class=" badge mt-2 {% if slr_atr.compliance_category_percentage == '100' %} badge-success {% elif slr_atr.compliance_category_percentage == '50' %} badge-warning {% elif slr_atr.compliance_category_percentage == '0' %} badge-danger {% else %} badge-primary {% endif %} ">
+                                {{slr_atr.compliance_category|default_if_none:'' }} {% endif %} - {% if slr_atr.compliance_category_percentage %} {{slr_atr.compliance_category_percentage|default_if_none:''}}% </span>
+                        </h4> 
+                        {% endif %} 
+                    </td>
+                    <td class="col8" style="white-space: normal;">
+                        <span class="text-muted">  
+                            <textarea class="form-control" name="user_remark" id="remark_{{slr_atr.id}}" rows="3" onchange="edit_extra_slr_data(this, '{{slr_atr.id}}')" {% if slr_atr.compliance == 'NA' %} disabled {% endif %}>{{slr_atr.audit_remarks|default_if_none:'' }}</textarea> 
+                        </span>
+                    </td>
+                    <td class="col9">
+                        <div class="form-group">
+                            <select {% if staffProfile.user_type == 'staff' %} disabled {% endif %} class="form-control" name="audit_status" id="audit_status_{{slr_atr.id}}" onchange="edit_extra_slr_data(this, '{{slr_atr.id}}')">
+                                <!-- <option value=""></option> --> 
+                                {% if slr_atr.audit_status == 'Pending' %} 
+                                <option {% if slr_atr.audit_status == 'Pending' %} selected {% endif %} value="Pending">Pending</option>
+                                <option {% if slr_atr.audit_status == 'Action Required' %} selected {% endif %} value="Action Required">Action Required</option> 
+                                {% elif slr_atr.audit_status == 'Completed' %} 
+                                <option {% if slr_atr.audit_status == 'Completed' %} selected {% endif %} value="Completed">Completed</option>
+                                <option {% if slr_atr.audit_status == 'Action Required' %} selected {% endif %} value="Action Required">Action Required</option> 
+                                {% elif slr_atr.audit_status == 'Action Required' %} 
+                                <option {% if slr_atr.audit_status == 'Action Required' %} selected {% endif %} value="Action Required">Action Required</option>
+                                <option {% if slr_atr.audit_status == 'Completed' %} selected {% endif %} value="Completed">Completed</option> 
+                                {% elif slr_atr.audit_status == 'Action Taken' %} 
+                                <option {% if slr_atr.audit_status == 'Action Taken' %} selected {% endif %} value="Action Taken">Action Taken</option>
+                                <option {% if slr_atr.audit_status == 'Action Required' %} selected {% endif %} value="Action Required">Action Required</option>
+                                <option {% if slr_atr.audit_status == 'Completed' %} selected {% endif %} value="Completed">Completed</option> 
+                                {% else %} 
+                                <option {% if slr_atr.audit_status == 'Action Taken' %} selected {% endif %} value="Action Taken">Action Taken</option>
+                                <option {% if slr_atr.audit_status == 'Action Required' %} selected {% endif %} value="Action Required">Action Required</option>
+                                <option {% if slr_atr.audit_status == 'Completed' %} selected {% endif %} value="Completed">Completed</option> 
+                                {% endif %}
+                            </select>
+                        </div>
+                    </td>
+                    <td class="col10">
+                        <div class="form-group">
+                            <textarea {% if staffProfile.user_type == 'staff' %} readonly {% endif %} class="form-control" type="text" name="comment_auditor" id="comment_auditor_{{slr_atr.id}}" rows="3" onchange="edit_extra_slr_data(this, '{{slr_atr.id}}')">{{slr_atr.comment_for_auditor|default_if_none:''}}</textarea>
+                        </div>
+                    </td> 
+                    <td class="col11"> 
+                        {% if slr_atr.compliance_category_percentage|add:'0' >= 0 and slr_atr.compliance_category_percentage|add:'0' < 100 %} 
+                        <div class="form-group">
+                            <select class="form-control {% if not slr_atr.action_taken_by_outlet_manager %}  bg-danger text-white  {% endif %}" name="action_outlet" id="action_outlet_{{slr_atr.id}}" onchange="edit_extra_slr_data(this, '{{slr_atr.id}}')" {% if not staffProfile.user_type == 'staff' %} disabled {% endif %}>
+                                <option value="">Select</option>
+                                <option {% if slr_atr.action_taken_by_outlet_manager == 'Resource shortage' %} selected {% endif %} value="Resource shortage">Resource shortage</option>
+                                <option {% if slr_atr.action_taken_by_outlet_manager == 'Facility issue' %} selected {% endif %} value="Facility issue">Facility issue</option>
+                                <option {% if slr_atr.action_taken_by_outlet_manager == 'Verbal Warning' %} selected {% endif %} value="Verbal Warning">Verbal Warning</option>
+                                <option {% if slr_atr.action_taken_by_outlet_manager == 'Education' %} selected {% endif %} value="Education">Education</option>
+                                <option {% if slr_atr.action_taken_by_outlet_manager == 'PIP Connect' %} selected {% endif %} value="PIP Connect">PIP Connect</option>
+                            </select>
+                        </div> 
+                        {% endif %} 
+                    </td>
+                    <td class="col12"> 
+                        {% if slr_atr.compliance_category_percentage|add:'0' >= 0 and slr_atr.compliance_category_percentage|add:'0' < 100 %} 
+                        <div class="form-group">
+                            <select class="form-control {% if not slr_atr.status_by_om %}  bg-danger text-white  {% endif %}" name="status_om" id="status_om_{{slr_atr.id}}" onchange="edit_extra_slr_data(this, '{{slr_atr.id}}')" {% if not staffProfile.user_type == 'staff' %} disabled {% endif %}>
+                                <option value="">Select</option>
+                                <option {% if slr_atr.status_by_om == 'Open' %} selected {% endif %} value="Open">Open</option>
+                                <option {% if slr_atr.status_by_om == 'Closed' %} selected {% endif %} value="Closed">Closed</option>
+                            </select>
+                        </div> 
+                        {% endif %} 
+                    </td>
+                    <td class="col13"> 
+                        {% if slr_atr.compliance_category_percentage|add:'0' >= 0 and slr_atr.compliance_category_percentage|add:'0' < 100 %} 
+                        <div class="form-group">
+                            <textarea class="form-control {% if not slr_atr.remark_by_om %}  bg-danger text-white  {% endif %}" name="remark_om" id="remark_om_{{slr_atr.id}}" rows="3" onchange="edit_extra_slr_data(this, '{{slr_atr.id}}')" {% if not staffProfile.user_type == 'staff' %} readonly {% endif %}>{{slr_atr.remark_by_om|default_if_none:''}}</textarea>
+                        </div> 
+                        {% endif %} 
+                    </td> 
+                    <td class="col14">
+                        <div class="form-group">
+                            <select {% if staffProfile.user_type == 'staff' %}disabled{% endif %} class="form-control" name="action_management" id="action_management_{{slr_atr.id}}" onchange="edit_extra_slr_data(this, '{{slr_atr.id}}')">
+                                <option value="">Select</option>
+                                <option {% if slr_atr.action_taken_by_management == 'Verbal Warning' %} selected {% endif %} value="Verbal Warning"> Verbal Warning </option>
+                                <option {% if slr_atr.action_taken_by_management == 'Warning Letter' %} selected {% endif %} value="Warning Letter"> Warning Letter </option>
+                                <option {% if slr_atr.action_taken_by_management == 'Process Improvement' %} selected {% endif %} value="Process Improvement">Process Improvement</option>
+                                <option {% if slr_atr.action_taken_by_management == 'Non compliance-Incentive deduction' %} selected {% endif %} value="Non compliance-Incentive deduction">Non compliance-Incentive deduction</option>
+                                <option {% if slr_atr.action_taken_by_management == 'PIP Connect' %} selected {% endif %} value="PIP Connect">PIP Connect</option>
+                                <option {% if slr_atr.action_taken_by_management == 'Education' %} selected {% endif %} value="Education">Education</option>
+                            </select>
+                        </div>
+                    </td>
+                    <td class="col15">
+                        <div class="form-group">
+                            <textarea {% if staffProfile.user_type == 'staff' %} readonly {% endif %} class="form-control" name="remark_management" id="remark_management_{{slr_atr.id}}" onchange="edit_extra_slr_data(this, '{{slr_atr.id}}')" rows="3">{{slr_atr.remark_by_management|default_if_none:''}}</textarea>
+                        </div>
+                    </td>
+                    <td class="col16">
+                        <div class="form-group">
+                            <select {% if staffProfile.user_type == 'staff' %} disabled {% endif %} class="form-control" name="expected_intervene" id="expected_intervene_{{slr_atr.id}}" onchange="edit_extra_slr_data(this, '{{slr_atr.id}}')">
+                                <option value="">Select</option>
+                                <option {% if slr_atr.expected_dept_intervene == 'OM' %} selected {% endif %} value="OM">OM</option>
+                                <option {% if slr_atr.expected_dept_intervene == 'POC' %} selected {% endif %} value="POC">POC</option>
+                                <option {% if slr_atr.expected_dept_intervene == 'TAM' %} selected {% endif %} value="TAM">TAM</option>
+                                <option {% if slr_atr.expected_dept_intervene == 'SLD-Salon' %} selected {% endif %} value="SLD-Salon">SLD-Salon</option>
+                                <option {% if slr_atr.expected_dept_intervene == 'SLD-Skin' %} selected {% endif %} value="SLD-Skin">SLD-Skin</option>
+                                <option {% if slr_atr.expected_dept_intervene == 'Management' %} selected {% endif %} value="Management">Management</option>
+                                <option {% if slr_atr.expected_dept_intervene == 'Procurement' %} selected {% endif %} value="Procurement">Procurement</option>
+                                <option {% if slr_atr.expected_dept_intervene == 'Facility Management' %} selected {% endif %} value="Facility Management">Facility Management</option>
+                                <option {% if slr_atr.expected_dept_intervene == 'Marketing' %} selected {% endif %} value="Marketing">Marketing</option>
+                                <option {% if slr_atr.expected_dept_intervene == 'Finance & Accounts' %} selected {% endif %} value="Finance & Accounts">Finance & Accounts</option>
+                                <option {% if slr_atr.expected_dept_intervene == 'CRM' %} selected {% endif %} value="CRM"> CRM</option>
+                            </select>
+                        </div>
+                    </td>
+                    <td class="col17">
+                        <div class="form-group">
+                            <textarea {% if staffProfile.user_type == 'staff' %} readonly {% endif %} class="form-control" name="remark_department" id="remark_department_{{slr_atr.id}}" onchange="edit_extra_slr_data(this, '{{slr_atr.id}}')" rows="3">{{slr_atr.remark_by_department|default_if_none:''}}</textarea>
+                        </div>
+                    </td>
+                    <td class="col18">
+                        <div class="form-group">
+                            <select {% if staffProfile.user_type == 'staff' %} disabled {% endif %} class="form-control" name="status_department" id="status_department_{{slr_atr.id}}" onchange="edit_extra_slr_data(this, '{{slr_atr.id}}')">
+                                <option value="">Select</option>
+                                <option {% if slr_atr.status_by_department == 'Open' %} selected {% endif %} value="Open">Open</option>
+                                <option {% if slr_atr.status_by_department == 'Closed' %} selected {% endif %} value="Closed">Closed</option>
+                            </select>
+                        </div>
+                    </td> 
+                </tr> 
+                {% endfor %} 
+            </tbody>
+        </table>
+
+<div> 
+    {% if all_slr_atr.paginator.num_pages > 1 %} 
+    <!-- Paginator with multiple search query eg: searched_copliance has multiple search then this will work -->
+    <nav aria-label="Page navigation example">
+        <ul class="pagination justify-content-center">
+            <li class="page-item {% if not all_slr_atr.has_previous %} disabled {% endif %}">
+                <a class="page-link" href="?page_2=1{% for key, values in request.GET.lists %}{% if key != 'page_2' %}{% for value in values %}&{{ key }}={{ value }}{% endfor %}{% endif %}{% endfor %}" tabindex="-1">FIRST</a>
+            </li>
+            <li class="page-item {% if not all_slr_atr.has_previous %} disabled {% endif %}">
+                <a class="page-link" href="{% if all_slr_atr.has_previous %}?page_2={{ all_slr_atr.previous_page_number }}{% for key, values in request.GET.lists %}{% if key != 'page_2' %}{% for value in values %}&{{ key }}={{ value }}{% endfor %}{% endif %}{% endfor %} {% endif %}" tabindex="-1"> &laquo;</a>
+            </li> {% if all_slr_atr.number|add:'-4' > 1 %} <li class="page-item disabled">
+                <a class="page-link" href="?page_2={{ all_slr_atr.number|add:'-5' }}{% for key, values in request.GET.lists %}{% if key != 'page_2' %}{% for value in values %}&{{ key }}={{ value }}{% endfor %}{% endif %}{% endfor %}">&hellip;</a>
+            </li> {% endif %} {% for i in all_slr_atr.paginator.page_range %} {% if all_slr_atr.number == i %} <li class="active page-item current">
+                <a class="page-link" href="?page_2={{ i }}{% for key, values in request.GET.lists %}{% if key != 'page_2' %}{% for value in values %}&{{ key }}={{ value }}{% endfor %}{% endif %}{% endfor %}">{{ i }}</a>
+            </li> {% elif i > all_slr_atr.number|add:'-5' and i < all_slr_atr.number|add:'5' %} <li class="page-item">
+                <a class="page-link" href="?page_2={{ i }}{% for key, values in request.GET.lists %}{% if key != 'page_2' %}{% for value in values %}&{{ key }}={{ value }}{% endfor %}{% endif %}{% endfor %}">{{ i }}</a>
+                </li> {% endif %} {% endfor %} {% if all_slr_atr.paginator.num_pages > all_slr_atr.number|add:'4' %} <li class="page-item disabled">
+                    <a class="page-link" href="?page_2={{ all_slr_atr.number|add:'5' }}{% for key, values in request.GET.lists %}{% if key != 'page_2' %}{% for value in values %}&{{ key }}={{ value }}{% endfor %}{% endif %}{% endfor %}">&hellip;</a>
+                </li> {% endif %} <li class="page-item {% if not all_slr_atr.has_next %} disabled {% endif %}">
+                    <a class="page-link" href="{% if all_slr_atr.has_next %} ?page_2={{ all_slr_atr.next_page_number }}{% for key, values in request.GET.lists %}{% if key != 'page_2' %}{% for value in values %}&{{ key }}={{ value }}{% endfor %}{% endif %}{% endfor %} {% endif %}">&raquo;</a>
+                </li>
+                <li class="page-item {% if not all_slr_atr.has_next %} disabled {% endif %}">
+                    <a class="page-link" href="{% if all_slr_atr.has_next %} ?page_2={{ all_slr_atr.paginator.num_pages }}{% for key, values in request.GET.lists %}{% if key != 'page_2' %}{% for value in values %}&{{ key }}={{ value }}{% endfor %}{% endif %}{% endfor %} {% endif %}">LAST</a>
+                </li>
+        </ul>
+    </nav> 
+    {% endif %}
+</div>
+<!-- <div> 
+    {% if all_slr_atr.paginator.num_pages > 1%}
+    <nav aria-label="Page navigation example">
+        <ul class="pagination justify-content-center">
+            <li class="page-item {% if not all_slr_atr.has_previous %} disabled {% endif %}">
+                <a class="page-link" href="?page_2=1{% for key,value in request.GET.items %}{% if key != 'page_2' %}&{{ key }}={{ value }}{% endif %}{% endfor %}" tabindex="-1">FIRST</a>
+            </li>
+            <li class="page-item {% if not all_slr_atr.has_previous %} disabled {% endif %}">
+                <a class="page-link" href="{% if all_slr_atr.has_previous %}?page_2={{ all_slr_atr.previous_page_number }}{% for key,value in request.GET.items %}{% if key != 'page_2' %}&{{ key }}={{ value }}{% endif %}{% endfor %} {% endif %} " tabindex="-1"> &laquo;</a>
+            </li> {% if all_slr_atr.number|add:'-4' > 1 %} <li class="page-item disabled">
+                <a class="page-link" href="?page_2={{ all_slr_atr.number|add:'-5' }}{% for key,value in request.GET.items %}{% if key != 'page_2' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">&hellip;</a>
+            </li> {% endif %} {% for i in all_slr_atr.paginator.page_range %} {% if all_slr_atr.number == i %} <li class="active page-item current ">
+                <a class="page-link" href="?page_2={{ i }}{% for key,value in request.GET.items %}{% if key != 'page_2' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">{{ i }}</a>
+            </li> {% elif i > all_slr_atr.number|add:'-5' and i < all_slr_atr.number|add:'5' %} <li class="page-item">
+                <a class="page-link" href="?page_2={{ i }}{% for key,value in request.GET.items %}{% if key != 'page_2' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">{{ i }}</a>
+                </li> {% endif %} {% endfor %} {% if all_slr_atr.paginator.num_pages > all_slr_atr.number|add:'4' %} <li class="page-item disabled">
+                    <a class="page-link" href="?page_2={{ all_slr_atr.number|add:'5' }}{% for key,value in request.GET.items %}{% if key != 'page_2' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">&hellip;</a>
+                </li> {% endif %} <li class="page-item {% if not all_slr_atr.has_next %} disabled {% endif %}">
+                    <a class="page-link" href="{% if all_slr_atr.has_next %} ?page_2={{ all_slr_atr.next_page_number }}{% for key,value in request.GET.items %}{% if key != 'page_2' %}&{{ key }}={{ value }}{% endif %}{% endfor %} {% endif %}">&raquo;</a>
+                </li>
+                <li class="page-item {% if not all_slr_atr.has_next %} disabled {% endif %}">
+                    <a class="page-link" href="{% if all_slr_atr.has_next %} ?page_2={{ all_slr_atr.paginator.num_pages }}{% for key,value in request.GET.items %}{% if key != 'page_2' %}&{{ key }}={{ value }}{% endif %}{% endfor %} {% endif %}">LAST</a>
+                </li>
+        </ul>
+    </nav> 
+    {% endif %}
+</div> -->
+</div>
+</div>
+<!-- <script>
+    $(document).ready(function () {
+        // const prospecting_accounts = {{ prospecting_accounts | safe }}
+        $("#input_text").autocomplete({
+            // source: prospecting_accounts,
+            source: "/autocomplete-search/",
+            minLength: 1,
+            delay: 300,
+            open: function () {
+                setTimeout(function () {
+                    $('.ui-autocomplete').css('z-index', 99);
+                }, 0);
+            },
+            // response: function (event, ui) {
+            //     alert("helo")
+            //  },
+        });
+    });
+
+    $('#search_button_id').click(function () {
+        var search_params = $('#input_text').val();
+        if (search_params) {
+            window.location.href = `/autocomplete-search/?prospect=${search_params}`;
+        }
+        else {
+            alert("No prospect found");
+        }
+        return false
+    });
+</script> --> 
+<script>
+    // const selectAllCheckbox = document.getElementById("select-all-checkbox");
+    // const checkboxes = document.querySelectorAll('.toggle');
+
+    //     selectAllCheckbox.addEventListener('change', (event) => {
+    //         checkboxes.forEach((checkbox) => {
+    //             checkbox.checked = event.target.checked;
+    //         });
+    //     });
+    // Get the saved state of the columns from localStorage
+    let colState = JSON.parse(localStorage.getItem('colState')) || [true, true, true];
+
+    // Apply the saved state to the table columns
+    var myTable = document.getElementById('myTable');
+    let toggleCheckboxes = document.querySelectorAll('.toggle');
+    toggleCheckboxes.forEach(function (checkbox, index) {
+        checkbox.checked = colState[index];
+        let colIndex = checkbox.dataset.col;
+        myTable.querySelectorAll('tr > *:nth-child(' + colIndex + ')').forEach(function (cell) {
+            cell.style.display = colState[index] ? '' : 'none';
+        });
+    });
+
+    // Save the state of the columns to localStorage when checkboxes are clicked
+    toggleCheckboxes.forEach(function (checkbox, index) {
+        checkbox.addEventListener('click', function () {
+            colState[index] = this.checked;
+            localStorage.setItem('colState', JSON.stringify(colState));
+            let colIndex = this.dataset.col;
+            myTable.querySelectorAll('tr > *:nth-child(' + colIndex + ')').forEach(function (cell) {
+                cell.style.display = colState[index] ? '' : 'none';
+            });
+        });
+    });
+</script> 
+<script>
+    function toggle_user_reponsible_search(btn_id) {
+        var input_id = btn_id.id.split("_")[1];
+        var input = document.getElementById("search-box_" + input_id);
+        var select_input = document.getElementById('employee-select_' + input_id);
+        var emp_text = document.getElementById('emp-text_' + input_id);
+        if (input.style.display === "none") {
+            input.style.display = "block";
+            select_input.style.display = "block";
+            emp_text.style.display = "none";
+            btn_id.innerHTML = '<i class="fas fa-check"></i>'
+        } else {
+            input.style.display = "none";
+            select_input.style.display = "none";
+            emp_text.style.display = "block";
+            btn_id.innerHTML = '<i class="fas fa-pencil-alt"></i>'
+        }
+    }
+    function user_searchBox(loop_num) {
+        var searchBox = $('#search-box_' + loop_num);
+        var dropdown = $('#employee-select_' + loop_num);
+        // console.log("loop", loop_num)
+        var searchQuery = searchBox.val();
+        // console.log("input", searchQuery);
+        if (searchQuery.length > 3) {
+            $.ajax({
+                url: '/user_search_list/',
+                type: 'GET',
+                data: { 'search_query': searchQuery },
+                success: function (response) {
+                    console.log('data', response)
+                    var options = '';
+                    for (var i = 0; i < response.length; i++) {
+                        options += '<option value="' + response[i].id + '">' + response[i].name + '</option>';
+                    }
+                    dropdown.append(options);
+                    // dropdown.html(data);
+                }
+            });
+        }
+    }
+
+    let mainCheckbox = document.getElementById('select-all-checkbox');
+    // let toggleCheckboxes = document.querySelectorAll('.toggle');
+
+    // Add an event listener to the main checkbox
+    mainCheckbox.addEventListener('click', function () {
+        // Loop through all toggle checkboxes and set their checked property
+        toggleCheckboxes.forEach(function (checkbox) {
+            checkbox.checked = !mainCheckbox.checked;
+            // Trigger the click event on each toggle checkbox
+            checkbox.click();
+        });
+    });
+
+    function expandTable() {
+        const tableContainer = document.getElementById('table-container');
+        tableContainer.classList.add('fullscreen');
+        var exit_btn = document.getElementById('myButton');
+        exit_btn.classList.remove('d-none');
+        // sessionStorage.setItem('fullscreen', 'true');
+        localStorage.setItem('isSlrSalonAtrTableFullscreen', true);
+    }
+
+    function exit_full_screen() {
+        const tableContainer = document.getElementById('table-container');
+        tableContainer.classList.remove('fullscreen');
+        var exit_btn = document.getElementById('myButton');
+        exit_btn.classList.add('d-none');
+        // sessionStorage.removeItem('fullscreen');
+        localStorage.removeItem('isSlrSalonAtrTableFullscreen');
+
+    }
+
+    window.onload = function () {
+        const isTableFullscreen = localStorage.getItem('isSlrSalonAtrTableFullscreen');
+        if (isTableFullscreen) {
+            expandTable();
+        }
+    };
+
+    function edit_extra_slr_data(t, atr_id) {
+        $('#cover-spin').show(0);
+        var got_value = t.value;
+        var checklist_id = atr_id;
+        var value_name = t.name;
+        var final_list = [];
+        try {
+            if (value_name == 'atr_complience') {
+                if (got_value == 'NA') {
+                    console.log('0')
+                    document.getElementById('user_resp_div_' + atr_id).disabled = true;
+                    console.log('1')
+                    // document.getElementById('complience_'+atr_id).style.display = 'none';
+                    console.log('2')
+                    document.getElementById('remark_' + atr_id).disabled = true;
+                    console.log('3')
+                } else {
+                    document.getElementById('user_resp_div_' + atr_id).disabled = false;
+                    // document.getElementById('complience_' + atr_id).style.display = 'block';
+                    document.getElementById('remark_' + atr_id).disabled = false;
+                }
+            }
+        } catch (e) { }
+
+        try {
+            slr_query = {
+                "slr_id": checklist_id,
+                "slr_value": got_value,
+                "name": value_name
+            }
+            if (slr_query.slr_id.length > 0) {
+                // console.log('id', scheduler_query.from_dt, scheduler_query.to_dt, scheduler_query.center);
+                final_list.push(slr_query);
+            } else {
+                $('#cover-spin').hide(0);
+                alert('Something Went Wrong, please try again after refreshing the page');
+            }
+
+        } catch (e) { }
+        // console.log(final_list)
+        fetch("/edit_slr_salon_extra_data/", {
+            method: "POST",
+            body: JSON.stringify({
+                'data_obj': final_list,
+            }),
+            // Adding headers to the request
+            headers: {
+                "Content-type": "application/json",
+                "X-CSRFToken": "{{ csrf_token }}",
+            },
+        })
+            .then((response) => {
+                // console.log(response);
+                if (response.redirected) {
+                    window.location.href = response.url;
+                    return;
+                }
+                return response.json();
+            })
+            .then((data) => {
+                var slr_data = data.slr_json
+                var final_data = slr_data[0]['fields'];
+                // console.log("Success: ", data);
+                if (data.msg == 'success') {
+                    $('#cover-spin').hide(0);
+                    if (t.value) {
+                        t.classList.remove('bg-danger', 'text-white');
+                    } else {
+                        t.classList.add('bg-danger', 'text-white');
+                    }
+
+                    if (value_name == 'user_responsible') {
+                        document.getElementById('emp-text_' + atr_id).innerHTML = $(`#${t.id} option:selected`).text();
+                    }
+
+                    if (value_name == 'atr_complience') {
+                        document.getElementById('ms_compliance_category_' + atr_id).innerHTML = final_data['compliance_category'] + " - " + final_data['compliance_category_percentage']
+
+                    }
+                }
+                else {
+                    $('#cover-spin').hide(0);
+                    alert('Something went wrong, Please try again after refreshing the page')
+                }
+            });
+    }
+
+</script>

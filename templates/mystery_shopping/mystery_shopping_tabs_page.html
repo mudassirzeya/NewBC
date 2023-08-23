@@ -1,0 +1,327 @@
+{% extends "base.html" %}
+{% load static %} 
+{% block breadcrumb %} 
+<h5 class="text-primary mb-0" style="font-weight: bold;">Mystery Shopping</h5> 
+{% endblock breadcrumb %} 
+{% block content %}
+<div class="">
+    <form method="get">
+        <div class="row">
+            <div class="col">
+                <div class="form-group">
+                    <label class="text-muted" for="">Center</label>
+                    <select class="" id="select_center_id" name="select_center" multiple="multiple">
+                        <!-- <option value=""></option>  -->
+                    </select>
+                </div>
+            </div>
+            <div class="col">
+                <div class="form-group">
+                    <label class="text-muted" for="">Search By ID</label>
+                    <input type="number" name="searched_from_id" id="" class="form-control" value="{{searched_from_id|default_if_none:''}}">
+                </div>
+            </div>
+            <div class="col">
+                <div class="form-group">
+                    <label class="text-muted" for="">Month of Audit</label>
+                    <!-- <label for="">Search with Date</label> -->
+                    <select class="" name="select_month" id="select_month_id" multiple="multiple">
+                        <!-- <option value=""></option>  -->
+                        {% for month in all_months %} 
+                        <option {% if month.id|stringformat:'s' in searched_month %} selected {% endif %} value="{{month.id}}">{{month.month}}</option> 
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+            <div class="col">
+                <div class="form-group">
+                    <label class="text-muted" for="">Compliance</label>
+                    <select name="searched_compliance" id="searched_compliance_id" class="" multiple="multiple">
+                        <!-- <option value=""> </option>  -->
+                        <option {% if 'RNR' in searched_compliance %} selected {% endif %} value="RNR">RNR</option>
+                        <option {% if 'Benchmark KRA' in searched_compliance %} selected {% endif %} value="Benchmark KRA">Benchmark KRA</option>
+                        <option {% if 'CPI' in searched_compliance %} selected {% endif %} value="CPI">CPI</option>
+                        <option {% if 'PIP' in searched_compliance %} selected {% endif %} value="PIP">PIP</option>
+                        <option {% if 'Education' in searched_compliance %} selected {% endif %} value="Education">Education</option>
+                        <option {% if 'NA' in searched_compliance %} selected {% endif %} value="NA">NA</option>
+                    </select>
+                </div>
+            </div>
+            <div class="col">
+                <div class="form-group">
+                    <label class="text-muted" for="">KRA</label>
+                    <select name="searched_kra" id="searched_kra_id" class="" multiple="multiple">
+                        <!-- <option value=""></option> -->
+                        {% for kra in unique_kra_filed %}
+                        <option {% if kra in searched_kra %} selected {% endif %} value="{{kra}}">{{kra}}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+            <div class="col">
+                <div class="form-group">
+                    <label class="text-muted" for="">Checklist Status</label>
+                    <select class="" name="select_audit_status" id="select_audit_status_id" multiple="multiple">
+                        <!-- <option value=""></option> -->
+                        <option {% if 'All' in select_audit_status %} selected {% endif %} value="All">All</option>
+                        <option {% if 'Completed' in select_audit_status %} selected {% endif %} value="Completed">Completed</option>
+                        <option {% if 'Action Required' in select_audit_status %} selected {% endif %} value="Action Required">Action Required</option>
+                        <option {% if 'Action Taken' in select_audit_status %} selected {% endif %} value="Action Taken">Action Taken</option>
+                        <option {% if 'Pending' in select_audit_status %} selected {% endif %} value="Pending">Pending</option>
+                    </select>
+                </div>
+            </div>
+            <div class="col">
+                <div class="form-group">
+                    <label class="text-muted" for="">OM Status</label>
+                    <select name="searched_om" id="searched_om_id" class="">
+                        <option value=""> </option>
+                        <option {% if searched_om == 'Open' %} selected {% endif %} value="Open">Open</option>
+                        <option {% if searched_om == 'Closed' %} selected {% endif %} value="Closed">Closed</option>
+                    </select>
+                </div>
+            </div>
+            <div class="col">
+                <div class="form-group">
+                    <label class="text-muted" for="">Dept. Status</label>
+                    <select name="searched_dept" id="searched_dept_id" class="">
+                        <option value=""></option>
+                        <option {% if searched_dept == 'Open' %} selected {% endif %} value="Open">Open</option>
+                        <option {% if searched_dept == 'Closed' %} selected {% endif %} value="Closed">Closed</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-3">
+                <div class="form-group">
+                    <label class="text-muted">Remark By Management</label>
+                    <input type="text" class="form-control" name="searched_management_remark" placeholder="search here"  
+                    value="{{searched_management_remark|default_if_none:''}}">
+                </div>
+            </div>
+            <div class="col-2">
+                <div class="form-group">
+                    <label class="text-muted" for="">Action By Management</label>
+                    <select name="searched_action_by_management" id="searched_action_by_management_id" class="" multiple="multiple">
+                        <!-- <option value=""></option> -->
+                        <option {% if 'Verbal Warning' in searched_action_by_management %} selected {% endif %} value="Verbal Warning"> Verbal Warning </option>
+                        <option {% if 'Warning Letter' in searched_action_by_management %} selected {% endif %} value="Warning Letter"> Warning Letter </option>
+                        <option {% if 'Process Improvement' in searched_action_by_management %} selected {% endif %} value="Process Improvement">Process Improvement</option>
+                        <option {% if 'Non compliance-Incentive deduction' in searched_action_by_management %} selected {% endif %} value="Non compliance-Incentive deduction">Non compliance-Incentive deduction</option>
+                        <option {% if 'PIP Connect' in searched_action_by_management %} selected {% endif %} value="PIP Connect">PIP Connect</option>
+                        <option {% if 'Education' in searched_action_by_management %} selected {% endif %} value="Education">Education</option>
+                    </select>
+                </div>
+            </div>
+            <div class="col-2">
+                <div class="form-group">
+                    <label class="text-muted" for="">Expected to Intervene</label>
+                    <select name="searched_personal_intervene" id="searched_personal_intervene_id" class="" multiple="multiple">
+                        <!-- <option value=""></option> -->
+                        <option {% if 'OM' in searched_personal_intervene %} selected {% endif %} value="OM">OM</option>
+                        <option {% if 'POC' in searched_personal_intervene %} selected {% endif %} value="POC">POC</option>
+                        <option {% if 'TAM' in searched_personal_intervene %} selected {% endif %} value="TAM">TAM</option>
+                        <option {% if 'SLD-Salon' in searched_personal_intervene %} selected {% endif %}                 value="SLD-Salon">SLD-Salon</option>
+                        <option {% if 'SLD-Skin' in searched_personal_intervene %} selected {% endif %}                       value="SLD-Skin">SLD-Skin</option>
+                        <option {% if 'Management' in searched_personal_intervene %} selected {% endif %}                     value="Management">Management</option>
+                        <option {% if 'Procurement' in searched_personal_intervene %} selected {% endif %} value="Procurement">Procurement</option>
+                        <option {% if 'Facility Management' in searched_personal_intervene %} selected {% endif %} value="Facility Management">Facility Management</option>
+                        <option {% if 'Marketing' in searched_personal_intervene %} selected {% endif %} value="Marketing">Marketing</option>
+                        <option {% if 'Finance & Accounts' in searched_personal_intervene %} selected {% endif %} value="Finance & Accounts">Finance & Accounts</option>
+                        <option {% if 'CRM' in searched_personal_intervene %} selected {% endif %} value="CRM">
+                            CRM</option>
+                    </select>
+                </div>
+            </div>
+            <div class="col-2">
+                <div class="form-group">
+                    <label class="text-muted" for="">Important Checklist</label>
+                    <select name="search_imp_checklist" id="search_imp_checklist_id" class="">
+                        <option value="">All</option>
+                        <option {% if search_imp_checklist == 'Important' %} selected {% endif %} value="Important">Important</option>
+                        <option {% if search_imp_checklist == 'Not Important' %} selected {% endif %} value="Not Important">Not Important</option>
+                    </select>
+                </div>
+            </div>
+            <div class="col-2">
+                <div class="form-group">
+                    <label class="text-muted" for="">User Type</label>
+                    <select name="search_user_type" id="search_user_type_id" class="form-control" onchange="get_center_of_usertype(this)">
+                        <option value=""></option>
+                        <option {% if search_user_type == 'Auditor' %} selected {% endif %} value="Auditor">Auditor</option>
+                        <option {% if search_user_type == 'Project Owner' %} selected {% endif %} value="Project Owner">Project Owner</option>
+                        <option {% if search_user_type == 'Audit Reviewer' %} selected {% endif %} value="Audit Reviewer">Audit Reviewer</option>
+                        <option {% if search_user_type == 'Audit Admin' %} selected {% endif %} value="Audit Admin">Audit Admin</option>
+                        <!-- <option {% if search_user_type == 'Senior Management' %} selected {% endif %} value="Senior Management">Senior Management</option> -->
+                    </select>
+                </div>
+            </div>
+            <div class="col">
+                <br>
+                <div class="row pt-2">
+                    <!-- <label for="">hello</label> -->
+                    <button class="btn btn-success btn-sm mb-2" type="submit" style="font-size: 15px;">
+                        <i class="fas fa-search">&nbsp;</i></button> &nbsp;&nbsp; <a href="{% url 'mystery_shopping' %}" class="btn btn-danger btn-sm mb-2" style="font-size: 15px;">
+                        <i class="fas fa-window-close"></i> </a>
+                </div>
+            </div>
+        </div>
+    </form>
+</div>
+<!-- {% if is_mystery_shopper or staffProfile.is_super_admin or staffProfile.is_audit_admin %} 
+<div class="float-right">
+    <a href="{ url 'action_required_page' }" class="btn-sm btn-outline-info"> View Action Required</a>
+</div> 
+{% endif %} -->
+<div>
+    <ul class="nav nav-tabs" id="myTab" role="tablist">
+        {% if not is_project_owner  %}
+        <li class="nav-item">
+            <a class="nav-link active " id="tag-mysteryoverview_tab" data-toggle="tab" href="#mysteryoverview_tab" role="tab" aria-controls="home" aria-selected="true" onclick="return saveTabSelect(this)">Lists</a>
+        </li>
+        {% endif %}
+        <li class="nav-item">
+            <a class="nav-link {% if is_project_owner %} active {% endif %}" id="tag-mysterydetail_tab" data-toggle="tab" href="#mysterydetail_tab" role="tab" aria-controls="profile" aria-selected="false" onclick="return saveTabSelect(this)">ATR</a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link" id="tag-mysteryimage_tab" data-toggle="tab" href="#mysteryimage_tab" role="tab" aria-controls="profile" aria-selected="false" onclick="return saveTabSelect(this)">Files</a>
+        </li>
+    </ul>
+    <div class="tab-content" id="myTabContent">
+        {% if not is_project_owner %}
+        <div class="tab-pane fade show active" id="mysteryoverview_tab" role="tabpanel" aria-labelledby="home-tab"> 
+            {% include 'mystery_shopping/mystery_shopping_tabs/mystery_overview_tab.html' %} 
+        </div>
+        {% endif %}
+        <div class="tab-pane fade {% if is_project_owner %} show active {% endif %}" id="mysterydetail_tab" role="tabpanel" aria-labelledby="profile-tab"> 
+            {% include 'mystery_shopping/mystery_shopping_tabs/mystery_detail_tab.html' %} 
+        </div>
+        <div class="tab-pane fade" id="mysteryimage_tab" role="tabpanel" aria-labelledby="profile-tab"> 
+            {% include 'mystery_shopping/mystery_shopping_tabs/mystery_image_list.html' %} 
+        </div>
+    </div>
+</div>
+<!-- On Reload stay at previous tab -->
+<script>
+
+    window.onload = function () {
+            init_custom_dropdown();
+            var user_type = '{{search_user_type}}';
+            var selected_center = '{{selected_center_id}}';
+            console.log('1', selected_center)
+            var kv = {'value':user_type, 'selected_value':selected_center}
+            console.log('2', kv)
+            get_center_of_usertype(kv);
+    };
+
+    function init_custom_dropdown(){
+        var dropdown_ids_array = ['select_center_id', 'select_month_id', 'searched_compliance_id', 'searched_kra_id','select_audit_status_id', 'searched_om_id', 'searched_dept_id', 'searched_action_by_management_id', 'searched_personal_intervene_id','search_imp_checklist_id', 'edit_auditor_access_to_id', 'add_auditor_access_to_id']
+
+        for(var i=0; i < dropdown_ids_array.length; i++){
+            init(dropdown_ids_array[i]);
+        }
+    }
+
+    // TODO add to session
+    function saveTabSelect(item) {
+        // var selectedTag = JSON.parse(sessionStorage.getItem('client_tag')) || null;
+        // sessionStorage.setItem('client_tag', JSON.stringify(storedProductList));
+        // var selectedTag = sessionStorage.getItem('client_tag') || null;
+        // sessionStorage.setItem('client_tag', storedProductList);
+        var prevSelectedTag = localStorage.getItem("curr_mysteryoverview_tag");
+        console.log(`prevSelectedTag: `, prevSelectedTag, item.id);
+        if (item.id == prevSelectedTag) {
+            return;
+        }
+        if (prevSelectedTag) {
+            var element = document.getElementById(prevSelectedTag);
+            element.classList.remove("active");
+
+            var tabPaneId = `${prevSelectedTag.split("-")[1]}`;
+            // console.log(`tabPanId: `, tabPanId);
+            var tabePaneElement = document.getElementById(tabPaneId);
+            tabePaneElement.classList.remove('active');
+        }
+        localStorage.setItem("curr_mysteryoverview_tag", item.id);
+        // console.log(`cur tag id: `, item.id)
+        return true;
+    }
+
+    function retrieveSelected() {
+        var curTag = localStorage.getItem("curr_mysteryoverview_tag");
+        // console.log(`curTag: `, curTag);
+        if (curTag) {
+            var curElement = document.getElementById(`${curTag}`);
+            if (curElement) {
+                // revome active from first pill and tab in case there's any prev tag in local storage
+                var dataTag = document.getElementById('tag-mysteryoverview_tab');
+                dataTag.classList.remove("active");
+                var dataTabPaneElement = document.getElementById('mysteryoverview_tab');
+                dataTabPaneElement.classList.remove('active');
+
+                // Add active to tab
+                curElement.classList.add("active");
+                var curPaneId = `${curTag.split('-')[1]}`;
+                var curPaneElement = document.getElementById(curPaneId);
+                curPaneElement.classList.add('show');
+                curPaneElement.classList.add('active');
+
+                // const tab = $(curElement).data('tab_selected');
+                // window.location.href = `/clients/${client_id}/?tab=${tab}`;
+            } else {
+                // Else set in local storage the current active tab
+                localStorage.setItem("curr_mysteryoverview_tag", 'tag-mysteryoverview_tab');
+            }
+
+        } else {
+            // Else set in local storage the current active tab
+            localStorage.setItem("curr_mysteryoverview_tag", 'tag-mysteryoverview_tab');
+        }
+    }
+    retrieveSelected();
+
+    function get_center_of_usertype(t){
+        var selected_val = t.value;
+        var final = {'val':selected_val, 'audit_type':'Mystery Shopper'};
+        // var dropdown = document.getElementById('select_center_id');
+    
+        fetch("/set_center_correspondence_to_usertype/", {
+            method: "POST",
+            body: JSON.stringify({
+                data_obj: final,
+            }),
+            // Adding headers to the request
+            headers: {
+                "Content-type": "application/json",
+                "X-CSRFToken": "{{ csrf_token }}",
+            },
+        })
+            .then((response) => {
+                // console.log(response);
+                if (response.redirected) {
+                    window.location.href = response.url;
+                    return;
+                }
+                return response.json();
+            })
+            .then((data) => {
+                console.log("Success: ", data);
+                var center_data = data.center_json
+                console.log(center_data)
+                // var final_data = mystery_data[0]['fields'];
+                if (data.msg == 'success') {
+                    console.log('val', t.selected_value)
+                    create_dropdown('select_center_id', 'select_center', center_data, t.selected_value)
+                }
+                else {
+                    alert('Something went wrong, Please try again after refreshing the page')
+                    $('#cover-spin').hide(0);
+                }
+            });
+
+
+    }
+
+</script> 
+{% endblock %}

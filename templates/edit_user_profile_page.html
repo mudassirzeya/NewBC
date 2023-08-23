@@ -1,0 +1,126 @@
+{% extends "base.html" %}
+{% load static %} 
+{% block breadcrumb %} 
+<h5 class="text-primary mb-0" style="font-weight: bold;">{{staffProfile.user.first_name}}'s Profile</h5> 
+{% endblock breadcrumb %} 
+{% block content %} 
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-body">
+                    <div class="text-center mt-4">
+                        <img src="{% static 'images/men.png' %}" class="rounded-circle" width="150" />
+                        <h4 class="card-title mt-2">{{staffProfile.user.first_name}}</h4>
+                        <h6 class="card-subtitle">{{staffProfile.user.username}}</h6>
+                    </div>
+                </div>
+                <hr>
+                <div class="card-body">
+                    <form action="" method="post" autocomplete="off" id="user_profile_form">
+                        {% csrf_token %}
+                        {% for message in messages %} <p class="text-danger text-center" id="messages">{{message}}</p> {% endfor %}
+                        <div class="form-group mb-4">
+                            <label for="current_passcode">Current Password</label>
+                            <input class="form-control" type="password" id="current_passcode" name="current_passcode" required>
+                        </div>
+                        <div class="form-group mb-4">
+                            <label for="new_passcode">New Password</label>
+                            <input class="form-control" type="password" id="new_passcode" name="new_passcode" required>
+                        </div>
+                        <span class="text-danger" id="password_error"></span>
+                        <div class="form-group mb-4">
+                            <label for="confirm_passcode">Confirm Password</label>
+                            <input class="form-control" type="password" id="confirm_passcode" name="confirm_passcode" required>
+                        </div>
+                        <input type="hidden" name="user_password_change">
+                        <div class="row justify-content-center mt-2">
+                            <button class="btn btn-success" type="button" id="user_password_submit_btn">Set Password</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- <div class="row d-flex justify-content-center">
+    <div class="col-6">
+        <div class="card">
+            <div class="card-body">
+                <center class="mt-4"> <img src="{% static 'images/men.png' %}" class="rounded-circle" width="150" />
+                    <h4 class="card-title mt-2">{{staffProfile.user.first_name}}</h4>
+                    <h6 class="card-subtitle">{{staffProfile.user.email}}</h6>
+                </center>
+            </div>
+            <hr>
+            <div class="card-body">
+                <div class="">
+                    <form action="" method="post" autocomplete="off">
+                        <div class="form-group mb-4">
+                            <label for="">Current Password</label>
+                            <input class="form-control" type="text" name="current_passcode">
+                        </div>
+                        <div class="form-group mb-4">
+                            <label for="">New Password</label>
+                            <input class="form-control" type="password" name="new_passcode">
+                        </div>
+                        <div class="form-group mb-4">
+                            <label for="">Confirm Password</label>
+                            <input class="form-control" type="text" name="confirm_passcode">
+                        </div>
+                        <span class="text-danger" id="password_error"></span>
+                        <div class="row justify-content-center mt-2">
+                            <button class="btn btn-success" type="submit">Set Password</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div> -->
+<script>
+    document.getElementById("user_password_submit_btn").addEventListener("click", function (event) {
+            event.preventDefault();  // prevent default form submission behavior
+
+            // validate required fields
+            var form = document.getElementById("user_profile_form");
+            var requiredFields = form.querySelectorAll("[required]");
+            var isValid = true;
+            requiredFields.forEach(function (field) {
+                if (!field.value) {
+                    field.classList.add("is-invalid");
+                    isValid = false;
+                } else {
+                    field.classList.remove("is-invalid");
+                }
+            });
+
+            // submit form if validation passes
+            if (isValid) {
+                validatePassword();
+                // form.submit();
+            }
+        });
+
+    
+    function validatePassword() {
+        var newPassword = document.getElementById('new_passcode').value;
+        var confirmPassword = document.getElementById('confirm_passcode').value;
+        var errorSpan = document.getElementById('password_error');
+        var form = document.getElementById('user_profile_form');
+        if(newPassword)
+        if (newPassword === confirmPassword) {
+            // Passwords match, submit the form
+            errorSpan.textContent = ''; // Clear any previous error message
+            document.getElementById('user_password_submit_btn').disabled = true;
+            document.getElementById('user_password_submit_btn').innerHTML = 'Please Wait...'
+            form.submit();
+        } else {
+            // Passwords don't match, display error message
+            errorSpan.textContent = 'Passwords do not match.';
+        }
+    }
+</script>
+
+{% endblock %}

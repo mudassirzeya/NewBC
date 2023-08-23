@@ -1,0 +1,874 @@
+{% load mystery_extras %}
+<style>
+    .detail_table thead {
+        position: sticky;
+        top: 0;
+        /* background-color: rgb(151 112 112); */
+        z-index: 1;
+    }
+
+    #table-container {
+    position: relative;
+    overflow: auto;
+    }
+
+    #table-container.fullscreen {
+    position: fixed;
+    top: 0;
+    left: 0;
+    height: 100%;
+    width: 100%;
+    z-index: 100;
+    }
+
+    #table-container.fullscreen table {
+    height: 100%;
+    width: 100%;
+    }
+
+    #myButton {
+    position: fixed;
+    top: 20px;
+    z-index: 5000;
+    right: 20px;
+    }
+
+    .star {
+    visibility:hidden;
+    font-size:30px;
+    cursor:pointer;
+    /* color: gold; */
+    }
+    .star:before {
+    content: "\2605";
+    position: absolute;
+    visibility:visible;
+    }
+    .star:checked:before {
+    content: "\2606";
+    position: absolute;
+    }
+
+    /* table, th, td {
+			border: 1px solid black;
+			border-collapse: collapse;
+		}
+    th, td {
+        padding: 10px;
+    } */
+    
+    /* table {
+			border-collapse: collapse;
+			width: 100%;
+	}
+
+    th, td {
+        text-align: left;
+        padding: 8px;
+        border: 1px solid black;
+    }
+
+    th {
+        background-color: #ddd;
+    }
+
+    .hide {
+        display: none;
+    } */
+</style>
+<button class="btn btn-danger d-none" id="myButton" onclick="exit_full_screen()"><i class=" fas fa-compress"></i></button>
+<div class="row justify-content-end mr-2 p-2">
+    <div class="mr-2 p-2">
+        {{detail_start_index}} - {{detail_end_index}} of {{detail_total}}
+    </div>
+    <form action="" method="post"> {% csrf_token %} <input type="hidden" name="mystery_csv">
+        <button class="btn btn-success" type="" onclick="this.form.submit(); this.innerHTML = 'Downloading...';"><i class="fas fa-download"></i> CSV</button>
+    </form>&nbsp;
+    {% if not is_project_owner %}
+    <div>
+        <div class="btn-group">
+            <button type="button" class="btn btn-info dropdown-toggle dropdown-toggle-split" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false"> Columns </button>
+            <div class="dropdown-menu p-2" style="font-size: medium;">
+                <span class="dropdown-item p-0"><input type="checkbox" id="select-all-checkbox" checked> <label>Select All</label></span>
+                <span class="dropdown-item p-0"><input type="checkbox" class="toggle" id="column-1-checkbox" data-col="1" checked> <label>Center</label></span>
+                <span class="dropdown-item p-0"><input type="checkbox" class="toggle" id="column-2-checkbox" data-col="2" checked> <label>Audit By</label></span>
+                <span class="dropdown-item p-0"><input type="checkbox" class="toggle" id="column-3-checkbox" data-col="3" checked> <label>Audit Time</label></span>
+                <span class="dropdown-item p-0"><input type="checkbox" class="toggle" id="column-4-checkbox" data-col="4" checked> <label>Detail</label></span>
+                <span class="dropdown-item p-0"><input type="checkbox" class="toggle" id="column-5-checkbox" data-col="5" checked> <label>Checklist</label></span>
+                <span class="dropdown-item p-0"><input type="checkbox" class="toggle" id="column-6-checkbox" data-col="6" checked> <label>Person Responsible</label></span>
+                <span class="dropdown-item p-0"><input type="checkbox" class="toggle" id="column-7-checkbox" data-col="7" checked> <label> Compliance</label></span>
+                <span class="dropdown-item p-0"><input type="checkbox" class="toggle" id="column-8-checkbox" data-col="8" checked> <label>Auditor Remarks</label></span>
+                <span class="dropdown-item p-0"><input type="checkbox" class="toggle" id="column-9-checkbox" data-col="9" checked> <label>Audit Status</label></span>
+                <span class="dropdown-item p-0"><input type="checkbox" class="toggle" id="column-10-checkbox" data-col="10" checked> <label>Comment for auditor</label></span>
+                <span class="dropdown-item p-0"><input type="checkbox" class="toggle" id="column-11-checkbox" data-col="11" checked> <label>Action taken By Outlet Manager</label></span>
+                <span class="dropdown-item p-0"><input type="checkbox" class="toggle" id="column-12-checkbox" data-col="12" checked> <label>Status by OM</label></span>
+                <span class="dropdown-item p-0"><input type="checkbox" class="toggle" id="column-13-checkbox" data-col="13" checked> <label>Remark by OM</label></span>
+                <span class="dropdown-item p-0"><input type="checkbox" class="toggle" id="column-14-checkbox" data-col="14" checked> <label>Action Taken By Management</label></span>
+                <span class="dropdown-item p-0"><input type="checkbox" class="toggle" id="column-15-checkbox" data-col="15" checked> <label>Remark By Management</label></span>
+                <span class="dropdown-item p-0"><input type="checkbox" class="toggle" id="column-16-checkbox" data-col="16" checked> <label>Expected Dept/Personnel to Intervene</label></span>
+                <span class="dropdown-item p-0"><input type="checkbox" class="toggle" id="column-17-checkbox" data-col="17" checked> <label>Remark By Department</label></span>
+                <span class="dropdown-item p-0"><input type="checkbox" class="toggle" id="column-18-checkbox" data-col="18" checked> <label>Status By Department</label></span>
+            </div>
+        </div>
+    </div>&nbsp;
+    {% endif %}
+    <div>
+        <button class="btn btn-info" id="expand-btn" onclick="expandTable()"><i class="fas fa-expand"></i></button>
+    </div>
+</div>
+<div class="row p-4">
+    <div class="table-responsive" id="table-container" style="height: 100%">
+        <div> 
+            {% if all_mystery_detail.paginator.num_pages > 1 %} 
+            <!-- Paginator -->
+            <nav aria-label="Page navigation example">
+                <ul class="pagination justify-content-center">
+                    <li class="page-item {% if not all_mystery_detail.has_previous %} disabled {% endif %}">
+                        <a class="page-link" href="?page_2=1{% for key, values in request.GET.lists %}{% if key != 'page_2' %}{% for value in values %}&{{ key }}={{ value }}{% endfor %}{% endif %}{% endfor %}" tabindex="-1">FIRST</a>
+                    </li>
+                    <li class="page-item {% if not all_mystery_detail.has_previous %} disabled {% endif %}">
+                        <a class="page-link" href="{% if all_mystery_detail.has_previous %}?page_2={{ all_mystery_detail.previous_page_number }}{% for key, values in request.GET.lists %}{% if key != 'page_2' %}{% for value in values %}&{{ key }}={{ value }}{% endfor %}{% endif %}{% endfor %} {% endif %}" tabindex="-1"> &laquo;</a>
+                    </li> {% if all_mystery_detail.number|add:'-4' > 1 %} <li class="page-item disabled">
+                        <a class="page-link" href="?page_2={{ all_mystery_detail.number|add:'-5' }}{% for key, values in request.GET.lists %}{% if key != 'page_2' %}{% for value in values %}&{{ key }}={{ value }}{% endfor %}{% endif %}{% endfor %}">&hellip;</a>
+                    </li> {% endif %} {% for i in all_mystery_detail.paginator.page_range %} {% if all_mystery_detail.number == i %} <li class="active page-item current">
+                        <a class="page-link" href="?page_2={{ i }}{% for key, values in request.GET.lists %}{% if key != 'page_2' %}{% for value in values %}&{{ key }}={{ value }}{% endfor %}{% endif %}{% endfor %}">{{ i }}</a>
+                    </li> {% elif i > all_mystery_detail.number|add:'-5' and i < all_mystery_detail.number|add:'5' %} <li class="page-item">
+                        <a class="page-link" href="?page_2={{ i }}{% for key, values in request.GET.lists %}{% if key != 'page_2' %}{% for value in values %}&{{ key }}={{ value }}{% endfor %}{% endif %}{% endfor %}">{{ i }}</a>
+                        </li> {% endif %} {% endfor %} {% if all_mystery_detail.paginator.num_pages > all_mystery_detail.number|add:'4' %} <li class="page-item disabled">
+                            <a class="page-link" href="?page_2={{ all_mystery_detail.number|add:'5' }}{% for key, values in request.GET.lists %}{% if key != 'page_2' %}{% for value in values %}&{{ key }}={{ value }}{% endfor %}{% endif %}{% endfor %}">&hellip;</a>
+                        </li> {% endif %} <li class="page-item {% if not all_mystery_detail.has_next %} disabled {% endif %}">
+                            <a class="page-link" href="{% if all_mystery_detail.has_next %} ?page_2={{ all_mystery_detail.next_page_number }}{% for key, values in request.GET.lists %}{% if key != 'page_2' %}{% for value in values %}&{{ key }}={{ value }}{% endfor %}{% endif %}{% endfor %} {% endif %}">&raquo;</a>
+                        </li>
+                        <li class="page-item {% if not all_mystery_detail.has_next %} disabled {% endif %}">
+                            <a class="page-link" href="{% if all_mystery_detail.has_next %} ?page_2={{ all_mystery_detail.paginator.num_pages }}{% for key, values in request.GET.lists %}{% if key != 'page_2' %}{% for value in values %}&{{ key }}={{ value }}{% endfor %}{% endif %}{% endfor %} {% endif %}">LAST</a>
+                        </li>
+                </ul>
+            </nav> 
+            {% endif %}
+        </div>
+        <table id="myTable" class="table detail_table table-striped table-bordered" style="background-color: white;">
+            <thead style="background-color: white;">
+                <tr>
+                    <th id="col1" style="min-width: 150px"> Center </th>
+                    {% if not is_project_owner %}
+                    <th id="col2" style="min-width: 150px"> Audit By </th>
+                    <th id="col3" style="min-width: 150px"> Audit Time </th>
+                    {% endif %}
+                    <th id="col4" style="min-width: 150px"> Detail </th>
+                    <th id="col5" style="min-width: 250px"> Checklist </th>
+                    <th id="col6" style="min-width: 200px">Person Responsible</th>
+                    <th id="col7" style="min-width: 150px">Compliance</th>
+                    <th id="col8" style="min-width: 200px"> Auditor Remarks </th>
+                    <!-- <th style="min-width: 100px"> Status</th> -->
+                    {% if not is_project_owner %}
+                    <th id="col9" style="min-width: 200px;">Audit Status</th>
+                    <th id="col10" style="min-width: 200px;">Comment for auditor</th>
+                    {% endif %}
+                    <th id="col11" style="min-width: 200px;">Action taken By Outlet Manager</th>
+                    <th id="col12" style="min-width: 200px;">Status by OM</th>
+                    <th id="col13" style="min-width: 200px;">Remark by OM</th>
+                    {% if not is_project_owner %}
+                    <th id="col14" style="min-width: 200px;">Action Taken By Management</th>
+                    <th id="col15" style="min-width: 200px;">Remark By Management</th>
+                    <th id="col16" style="min-width: 200px;">Expected Dept/Personnel to Intervene</th>
+                    <th id="col17" style="min-width: 200px;">Remark By Department</th>
+                    <th id="col18" style="min-width: 200px;">Status By Department</th>
+                    {% endif %}
+                </tr>
+            </thead>
+            <tbody> 
+                {% for mystery in all_mystery_detail %} 
+                <tr>
+                    <td class="col1" style="white-space: normal;">
+                        <span class="text-muted">
+                            {{mystery.center|default_if_none:'' }} <br>
+                            {{mystery.month_of_audit.month|default_if_none:'' }} 
+                        </span>
+                    </td>
+                    {% if not is_project_owner %}
+                    <td class="col2" style="white-space: normal;">
+                        <span class="text-muted"> 
+                            {{mystery.mystery_shopping.shopper_name|default_if_none:''}} 
+                        </span>
+                    </td>
+                    <td class="col3" style="white-space: normal;">
+                        <span class="text-muted">
+                            {{mystery.date}} <br>
+                            {{mystery.mystery_shopping.start_time}} - {{mystery.mystery_shopping.end_time}}
+                        </span>
+                    </td>
+                    {% endif %}
+                    <td class="col4" style="white-space: normal;">
+                        <span class="text-muted">
+                            {{mystery.client_journey|default_if_none:'' }} - {{mystery.kra|default_if_none:'' }} <br>
+                            {{mystery.process|default_if_none:'' }} <br>
+                            {% if mystery.service_number == '1' %}
+                                <span class="badge badge-info">{{mystery.service_availed_1|default_if_none:''}}</span>
+                            {% elif mystery.service_number == '2' %}
+                            <span class="badge badge-info">{{mystery.service_availed_2|default_if_none:''}}</span>
+                            {% elif mystery.service_number == '3' %}
+                            <span class="badge badge-info">{{mystery.service_availed_3|default_if_none:''}}</span>
+                            {% else %}
+                                <span class="badge badge-info">{{mystery.service_availed_1|default_if_none:''}}</span> {% if mystery.service_availed_2 %} <br> {% endif %}
+                                <span class="badge badge-info">{{mystery.service_availed_2|default_if_none:''}}</span> {% if mystery.service_availed_3 %} <br> {% endif %}
+                                <span class="badge badge-info">{{mystery.service_availed_3|default_if_none:''}}</span>
+                            {% endif %}
+                        </span>
+                    </td>
+                    <td class="col5" style="white-space: normal;">
+                        <i class="{% if mystery.is_important %} fas {% else %} far {% endif %} fa-star text-info" id="important_checklist_{{mystery.id}}" 
+                        onclick="mark_checklist_important('{{mystery.id}}')"></i>
+                        <span class="text-muted" style="white-space: pre-wrap;"><b>{{mystery.mystery_shopping.id}} - {{mystery.sequence}}</b><br>{{mystery.checklist|default_if_none:'' }}</span>
+                    </td>
+                    <td class="col6" style="white-space: normal;">
+                        <div class="row">
+                            <div class="col">
+                                <span id="person_responsible_dropdown_{{mystery.id}}">
+                                    {% if mystery.staff.all|length > 2 %}
+                                        <span class="text-muted" data-toggle="tooltip" title="{% for each_staff in mystery.staff.all  %} {{each_staff.user.first_name|default_if_none:'' }} {{each_staff.user.last_name|default_if_none:'' }} {% if not forloop.last %},{% endif %}
+                                        {% endfor %}">{{ mystery.staff.all|length }} Selected</span> 
+                                    {% else %}
+                                        {% for each_staff in mystery.staff.all  %}
+                                        {{each_staff.user.first_name|default_if_none:'' }} {{each_staff.user.last_name|default_if_none:'' }}
+                                        {% if not forloop.last %},{% endif %}
+                                        {% endfor %}
+                                    {% endif %}
+                                </span>
+                            </div>
+                            <div class="col">
+                                {% if not mystery.compliance == 'NA' %}
+                                <div class="">
+                                    <button class="btn btn-link responsible_person_edit_btn" id="edit_person_responsible_btn_{{mystery.id}}" onclick="get_user_list_and_make_userresposible_dropdown(this)"><i class="fas fa-edit"></i></button>
+                                    <button class="btn btn-link d-none" id="save_person_responsible_btn_{{mystery.id}}" onclick="save_user_list_and_remove_userresposible_dropdown(this)"><i class="fas fa-check"></i></button>
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        
+                    </td>
+                    <td class="col7" style="white-space: normal;">
+                            <select class="form-control p-0 compliance_input" name="atr_complience" id="complience_{{mystery.id}}" onchange="edit_extra_mystery_data(this, '{{mystery.id}}')">
+                                <option value="">Select</option> 
+                                {% for compliance in mystery.compliance_dropdown|split:"," %} 
+                                <option {% if mystery.compliance == compliance %} selected {% endif %} value="{{compliance}}">{{compliance}}</option> 
+                                {% endfor %}
+                            </select>
+                        {% if mystery.compliance_category %} 
+                        <h4>
+                            <span id="ms_compliance_category_{{mystery.id}}" class=" badge mt-2 {% if mystery.compliance_category_percentage == '100' %} badge-success {% elif mystery.compliance_category_percentage == '50' %} badge-warning {% elif mystery.compliance_category_percentage == '0' %} badge-danger {% else %} badge-primary {% endif %} ">
+                                {{mystery.compliance_category|default_if_none:'' }} {% endif %} - {% if mystery.compliance_category_percentage %} {{mystery.compliance_category_percentage|default_if_none:''}}% </span>
+                        </h4>
+                        {% endif %}
+                    </td>
+                    <td class="col8" style="white-space: normal;">
+                        <span class="text-muted">
+                            <textarea class="form-control remark_input" name="user_remark" id="remark_{{mystery.id}}" rows="3" onchange="edit_extra_mystery_data(this, '{{mystery.id}}')" {% if mystery.compliance == 'NA' %} disabled {% endif %}>{{mystery.remark|default_if_none:'' }}</textarea>
+                        </span>
+                    </td>
+                    <!-- <td>
+                        <span class="text-muted">
+                            <span> Audit: 
+                                <span id="status_audit_{{mystery.id}}" class="badge {% if mystery.audit_status == 'Completed' %} badge-primary {% elif mystery.audit_status == 'Action Required' %} badge-danger {% elif mystery.audit_status == 'Action Taken' %} badge-success {% endif %} ">
+                                    {{mystery.audit_status|default_if_none:''}}
+                                </span>
+                            </span> <br>
+                            <span>
+                                OM: <span id="om_{{mystery.id}}" class="badge badge-info">{{mystery.status_by_om|default_if_none:'' }}</span>
+                            </span>
+                            <br>
+                            <span>
+                                Dept: 
+                                <span id="department_{{mystery.id}}" class="badge badge-info">{{mystery.status_by_department|default_if_none:''}}</span>
+                            </span>
+                        </span>
+                    </td> -->
+                    {% if not is_project_owner %}
+                    <td class="col9">
+                        <div class="form-group">
+                            <select class="form-control audit_status_input" name="audit_status" id="audit_status_{{mystery.id}}" onchange="edit_extra_mystery_data(this, '{{mystery.id}}')">
+                                <!-- <option value=""></option> -->
+                                {% if mystery.audit_status == 'Pending' %}
+                                    <option {% if mystery.audit_status == 'Pending' %} selected {% endif %} value="Pending">Pending</option>
+                                    <option {% if mystery.audit_status == 'Action Required' %} selected {% endif %} value="Action Required">Action Required</option>
+                                {% elif mystery.audit_status == 'Completed' %}
+                                    <option {% if mystery.audit_status == 'Completed' %} selected {% endif %} value="Completed">Completed</option>
+                                    <option {% if mystery.audit_status == 'Action Required' %} selected {% endif %} value="Action Required">Action Required</option>
+                                {% elif mystery.audit_status == 'Action Required' %}
+                                    <option {% if mystery.audit_status == 'Action Required' %} selected {% endif %} value="Action Required">Action Required</option>
+                                    <option {% if mystery.audit_status == 'Completed' %} selected {% endif %} value="Completed">Completed</option>
+                                {% elif mystery.audit_status == 'Action Taken' %}
+                                <option {% if mystery.audit_status == 'Action Taken' %} selected {% endif %} value="Action Taken">Action Taken</option>
+                                <option {% if mystery.audit_status == 'Action Required' %} selected {% endif %} value="Action Required">Action Required</option>
+                                <option {% if mystery.audit_status == 'Completed' %} selected {% endif %} value="Completed">Completed</option>
+                                {% else %}
+                                <option {% if mystery.audit_status == 'Action Taken' %} selected {% endif %} value="Action Taken">Action Taken</option>
+                                <option {% if mystery.audit_status == 'Action Required' %} selected {% endif %} value="Action Required">Action Required</option>
+                                <option {% if mystery.audit_status == 'Completed' %} selected {% endif %} value="Completed">Completed</option>
+                                {% endif %}
+                            </select>
+                        </div>
+                    </td>
+                    <td class="col10">
+                        <div class="form-group">
+                            <textarea class="form-control auditor_comment_input" type="text" name="comment_auditor" id="comment_auditor_{{mystery.id}}" rows="3" onchange="edit_extra_mystery_data(this, '{{mystery.id}}')">{{mystery.comment_for_auditor|default_if_none:''}}</textarea>
+                        </div>
+                    </td>
+                    {% endif %}
+                    <td class="col11">
+                        {% if mystery.compliance_category_percentage|add:'0' >= 0 and mystery.compliance_category_percentage|add:'0' < 100 %}
+                        <div class="form-group">
+                            <select class="form-control action_taken_by_om_input {% if not mystery.action_taken_by_outlet_manager %}  bg-danger text-white  {% endif %}" name="action_outlet" id="action_outlet_{{mystery.id}}" onchange="edit_extra_mystery_data(this, '{{mystery.id}}')">
+                                <option value="">Select</option>
+                                <option {% if mystery.action_taken_by_outlet_manager == 'Resource shortage' %} selected {% endif %} value="Resource shortage">Resource shortage</option>
+                                <option {% if mystery.action_taken_by_outlet_manager == 'Facility issue' %} selected {% endif %} value="Facility issue">Facility issue</option>
+                                <option {% if mystery.action_taken_by_outlet_manager == 'Verbal Warning' %} selected {% endif %} value="Verbal Warning">Verbal Warning</option>
+                                <option {% if mystery.action_taken_by_outlet_manager == 'Education' %} selected {% endif %} value="Education">Education</option>
+                                <option {% if mystery.action_taken_by_outlet_manager == 'PIP Connect' %} selected {% endif %} value="PIP Connect">PIP Connect</option>
+                            </select>
+                        </div>
+                        {% endif %}
+                    </td>
+                    <td class="col12">
+                        {% if mystery.compliance_category_percentage|add:'0' >= 0 and mystery.compliance_category_percentage|add:'0' < 100 %}
+                        <div class="form-group">
+                            <select class="form-control status_by_om_input {% if not mystery.status_by_om %}  bg-danger text-white  {% endif %}" name="status_om" id="status_om_{{mystery.id}}" onchange="edit_extra_mystery_data(this, '{{mystery.id}}')">
+                                <option value="">Select</option>
+                                <option {% if mystery.status_by_om == 'Open' %} selected {% endif %} value="Open">Open</option>
+                                <option {% if mystery.status_by_om == 'Closed' %} selected {% endif %} value="Closed">Closed</option>
+                            </select>
+                        </div>
+                        {% endif %}
+                    </td>
+                    <td class="col13">
+                        {% if mystery.compliance_category_percentage|add:'0' >= 0 and mystery.compliance_category_percentage|add:'0' < 100 %}
+                        <div class="form-group">
+                            <textarea class="form-control remark_by_om_input {% if not mystery.remark_by_om %}  bg-danger text-white  {% endif %}" name="remark_om" id="remark_om_{{mystery.id}}" rows="3" onchange="edit_extra_mystery_data(this, '{{mystery.id}}')" >{{mystery.remark_by_om|default_if_none:''}}</textarea>
+                        </div>
+                        {% endif %}
+                    </td>
+                    {% if not is_project_owner %}
+                    <td class="col14">
+                        <div class="form-group">
+                            <select class="form-control action_taken_by_management_input" name="action_management" id="action_management_{{mystery.id}}" onchange="edit_extra_mystery_data(this, '{{mystery.id}}')">
+                                <option value="">Select</option>
+                                <option {% if mystery.action_taken_by_management == 'Verbal Warning' %} selected {% endif %} value="Verbal Warning"> Verbal Warning </option>
+                                <option {% if mystery.action_taken_by_management == 'Warning Letter' %} selected {% endif %} value="Warning Letter"> Warning Letter </option>
+                                <option {% if mystery.action_taken_by_management == 'Process Improvement' %} selected {% endif %} value="Process Improvement">Process Improvement</option>
+                                <option {% if mystery.action_taken_by_management == 'Non compliance-Incentive deduction' %} selected {% endif %} value="Non compliance-Incentive deduction">Non compliance-Incentive deduction</option>
+                                <option {% if mystery.action_taken_by_management == 'PIP Connect' %} selected {% endif %} value="PIP Connect">PIP Connect</option>
+                                <option {% if mystery.action_taken_by_management == 'Education' %} selected {% endif %} value="Education">Education</option>
+                            </select>
+                        </div>
+                    </td>
+                    <td class="col15">
+                        <div class="form-group">
+                            <textarea class="form-control remark_management_input" name="remark_management" id="remark_management_{{mystery.id}}" onchange="edit_extra_mystery_data(this, '{{mystery.id}}')" rows="3">{{mystery.remark_by_management|default_if_none:''}}</textarea>
+                        </div>
+                    </td>
+                    <td class="col16">
+                        <div class="form-group">
+                            <select class="form-control expected_intervene_input" name="expected_intervene" id="expected_intervene_{{mystery.id}}" onchange="edit_extra_mystery_data(this, '{{mystery.id}}')">
+                                <option value="">Select</option>
+                                <option {% if mystery.expected_dept_intervene == 'OM' %} selected {% endif %}
+                                value="OM">OM</option>
+                                <option {% if mystery.expected_dept_intervene == 'POC' %} selected {% endif %}
+                                value="POC">POC</option>
+                                <option {% if mystery.expected_dept_intervene == 'TAM' %} selected {% endif %}
+                                value="TAM">TAM</option>
+                                <option {% if mystery.expected_dept_intervene == 'SLD-Salon' %} selected {% endif %}
+                                value="SLD-Salon">SLD-Salon</option>
+                                <option {% if mystery.expected_dept_intervene == 'SLD-Skin' %} selected {% endif %} 
+                                value="SLD-Skin">SLD-Skin</option>
+                                <option {% if mystery.expected_dept_intervene == 'Management' %} selected {% endif %} value="Management">Management</option>
+                                <option {% if mystery.expected_dept_intervene == 'Procurement' %} selected {% endif %} value="Procurement">Procurement</option>
+                                <option {% if mystery.expected_dept_intervene == 'Facility Management' %} selected {% endif %} value="Facility Management">Facility Management</option>
+                                <option {% if mystery.expected_dept_intervene == 'Marketing' %} selected {% endif %} value="Marketing">Marketing</option>
+                                <option {% if mystery.expected_dept_intervene == 'Finance & Accounts' %} selected {% endif %} value="Finance & Accounts">Finance & Accounts</option>
+                                <option {% if mystery.expected_dept_intervene == 'CRM' %} selected {% endif %} value="CRM">
+                                    CRM</option>
+                            </select>
+                        </div>
+                    </td>
+                    <td class="col17">
+                        <div class="form-group">
+                            <textarea class="form-control remark_department_input" name="remark_department" id="remark_department_{{mystery.id}}" onchange="edit_extra_mystery_data(this, '{{mystery.id}}')" rows="3">{{mystery.remark_by_department|default_if_none:''}}</textarea>
+                        </div>
+                    </td>
+                    <td class="col18">
+                        <div class="form-group">
+                            <select class="form-control status_department_input" name="status_department" id="status_department_{{mystery.id}}" onchange="edit_extra_mystery_data(this, '{{mystery.id}}')">
+                                <option value="">Select</option>
+                                <option {% if mystery.status_by_department == 'Open' %} selected {% endif %} 
+                                value="Open">Open</option>
+                                <option {% if mystery.status_by_department == 'Closed' %} selected {% endif %}
+                                value="Closed">Closed</option>
+                            </select>
+                        </div>
+                    </td>
+                    {% endif %}
+                </tr> 
+                {% endfor %}
+            </tbody>
+        </table>
+
+        <div> 
+            {% if all_mystery_detail.paginator.num_pages > 1 %} 
+            <!-- Paginator -->
+            <nav aria-label="Page navigation example">
+                <ul class="pagination justify-content-center">
+                    <li class="page-item {% if not all_mystery_detail.has_previous %} disabled {% endif %}">
+                        <a class="page-link" href="?page_2=1{% for key, values in request.GET.lists %}{% if key != 'page_2' %}{% for value in values %}&{{ key }}={{ value }}{% endfor %}{% endif %}{% endfor %}" tabindex="-1">FIRST</a>
+                    </li>
+                    <li class="page-item {% if not all_mystery_detail.has_previous %} disabled {% endif %}">
+                        <a class="page-link" href="{% if all_mystery_detail.has_previous %}?page_2={{ all_mystery_detail.previous_page_number }}{% for key, values in request.GET.lists %}{% if key != 'page_2' %}{% for value in values %}&{{ key }}={{ value }}{% endfor %}{% endif %}{% endfor %} {% endif %}" tabindex="-1"> &laquo;</a>
+                    </li> {% if all_mystery_detail.number|add:'-4' > 1 %} <li class="page-item disabled">
+                        <a class="page-link" href="?page_2={{ all_mystery_detail.number|add:'-5' }}{% for key, values in request.GET.lists %}{% if key != 'page_2' %}{% for value in values %}&{{ key }}={{ value }}{% endfor %}{% endif %}{% endfor %}">&hellip;</a>
+                    </li> {% endif %} {% for i in all_mystery_detail.paginator.page_range %} {% if all_mystery_detail.number == i %} <li class="active page-item current">
+                        <a class="page-link" href="?page_2={{ i }}{% for key, values in request.GET.lists %}{% if key != 'page_2' %}{% for value in values %}&{{ key }}={{ value }}{% endfor %}{% endif %}{% endfor %}">{{ i }}</a>
+                    </li> {% elif i > all_mystery_detail.number|add:'-5' and i < all_mystery_detail.number|add:'5' %} <li class="page-item">
+                        <a class="page-link" href="?page_2={{ i }}{% for key, values in request.GET.lists %}{% if key != 'page_2' %}{% for value in values %}&{{ key }}={{ value }}{% endfor %}{% endif %}{% endfor %}">{{ i }}</a>
+                        </li> {% endif %} {% endfor %} {% if all_mystery_detail.paginator.num_pages > all_mystery_detail.number|add:'4' %} <li class="page-item disabled">
+                            <a class="page-link" href="?page_2={{ all_mystery_detail.number|add:'5' }}{% for key, values in request.GET.lists %}{% if key != 'page_2' %}{% for value in values %}&{{ key }}={{ value }}{% endfor %}{% endif %}{% endfor %}">&hellip;</a>
+                        </li> {% endif %} <li class="page-item {% if not all_mystery_detail.has_next %} disabled {% endif %}">
+                            <a class="page-link" href="{% if all_mystery_detail.has_next %} ?page_2={{ all_mystery_detail.next_page_number }}{% for key, values in request.GET.lists %}{% if key != 'page_2' %}{% for value in values %}&{{ key }}={{ value }}{% endfor %}{% endif %}{% endfor %} {% endif %}">&raquo;</a>
+                        </li>
+                        <li class="page-item {% if not all_mystery_detail.has_next %} disabled {% endif %}">
+                            <a class="page-link" href="{% if all_mystery_detail.has_next %} ?page_2={{ all_mystery_detail.paginator.num_pages }}{% for key, values in request.GET.lists %}{% if key != 'page_2' %}{% for value in values %}&{{ key }}={{ value }}{% endfor %}{% endif %}{% endfor %} {% endif %}">LAST</a>
+                        </li>
+                </ul>
+            </nav> 
+            {% endif %}
+        </div>
+
+        <!-- <div> 
+            {% if all_mystery_detail.paginator.num_pages > 1%} 
+            <nav aria-label="Page navigation example">
+                <ul class="pagination justify-content-center">
+                    <li class="page-item {% if not all_mystery_detail.has_previous %} disabled {% endif %}">
+                        <a class="page-link" href="?page_2=1{% for key,value in request.GET.items %}{% if key != 'page_2' %}&{{ key }}={{ value }}{% endif %}{% endfor %}" tabindex="-1">FIRST</a>
+                    </li>
+                    <li class="page-item {% if not all_mystery_detail.has_previous %} disabled {% endif %}">
+                        <a class="page-link" href="{% if all_mystery_detail.has_previous %}?page_2={{ all_mystery_detail.previous_page_number }}{% for key,value in request.GET.items %}{% if key != 'page_2' %}&{{ key }}={{ value }}{% endif %}{% endfor %} {% endif %} " tabindex="-1">
+                            &laquo;</a>
+                    </li> {% if all_mystery_detail.number|add:'-4' > 1 %} <li class="page-item disabled">
+                        <a class="page-link" href="?page_2={{ all_mystery_detail.number|add:'-5' }}{% for key,value in request.GET.items %}{% if key != 'page_2' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">&hellip;</a>
+                    </li> {% endif %} {% for i in all_mystery_detail.paginator.page_range %} {% if all_mystery_detail.number == i %} <li class="active page-item current ">
+                        <a class="page-link" href="?page_2={{ i }}{% for key,value in request.GET.items %}{% if key != 'page_2' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">{{ i }}</a>
+                    </li> {% elif i > all_mystery_detail.number|add:'-5' and i < all_mystery_detail.number|add:'5' %} <li class="page-item">
+                        <a class="page-link" href="?page_2={{ i }}{% for key,value in request.GET.items %}{% if key != 'page_2' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">{{ i }}</a>
+                        </li> {% endif %} {% endfor %} {% if all_mystery_detail.paginator.num_pages > all_mystery_detail.number|add:'4' %} <li class="page-item disabled">
+                            <a class="page-link" href="?page_2={{ all_mystery_detail.number|add:'5' }}{% for key,value in request.GET.items %}{% if key != 'page_2' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">&hellip;</a>
+                        </li> {% endif %} <li class="page-item {% if not all_mystery_detail.has_next %} disabled {% endif %}">
+                            <a class="page-link" href="{% if all_mystery_detail.has_next %} ?page_2={{ all_mystery_detail.next_page_number }}{% for key,value in request.GET.items %}{% if key != 'page_2' %}&{{ key }}={{ value }}{% endif %}{% endfor %} {% endif %}">&raquo;</a>
+                        </li>
+                        <li class="page-item {% if not all_mystery_detail.has_next %} disabled {% endif %}">
+                            <a class="page-link" href="{% if all_mystery_detail.has_next %} ?page_2={{ all_mystery_detail.paginator.num_pages }}{% for key,value in request.GET.items %}{% if key != 'page_2' %}&{{ key }}={{ value }}{% endif %}{% endfor %} {% endif %}">LAST</a>
+                        </li>
+                </ul>
+            </nav> 
+            {% endif %}
+        </div> -->
+    </div>
+</div>
+
+<script>
+    $(document).ready(function () {
+        class_list = ['responsible_person_edit_btn', 'compliance_input', 'remark_input', 'audit_status_input', 'auditor_comment_input', 'action_taken_by_management_input', 'remark_management_input', 'expected_intervene_input', 'remark_department_input', 'status_department_input'];
+        var is_project_owner = '{{ is_project_owner }}';
+        console.log('user', is_project_owner);
+        if (is_project_owner == 'True') {
+            console.log('yes')
+            disable_input_elements(class_list)
+        }
+    });
+</script>
+
+{% if not is_project_owner %}  
+<script>
+    // const selectAllCheckbox = document.getElementById("select-all-checkbox");
+    // const checkboxes = document.querySelectorAll('.toggle');
+
+    //     selectAllCheckbox.addEventListener('change', (event) => {
+    //         checkboxes.forEach((checkbox) => {
+    //             checkbox.checked = event.target.checked;
+    //         });
+    //     });
+    // Get the saved state of the columns from localStorage
+    let colState = JSON.parse(localStorage.getItem('colState')) || [true, true, true];
+
+    // Apply the saved state to the table columns
+    var myTable = document.getElementById('myTable');
+    let toggleCheckboxes = document.querySelectorAll('.toggle');
+    toggleCheckboxes.forEach(function (checkbox, index) {
+        checkbox.checked = colState[index];
+        let colIndex = checkbox.dataset.col;
+        myTable.querySelectorAll('tr > *:nth-child(' + colIndex + ')').forEach(function (cell) {
+            cell.style.display = colState[index] ? '' : 'none';
+        });
+    });
+
+    // Save the state of the columns to localStorage when checkboxes are clicked
+    toggleCheckboxes.forEach(function (checkbox, index) {
+        checkbox.addEventListener('click', function () {
+            colState[index] = this.checked;
+            localStorage.setItem('colState', JSON.stringify(colState));
+            let colIndex = this.dataset.col;
+            myTable.querySelectorAll('tr > *:nth-child(' + colIndex + ')').forEach(function (cell) {
+                cell.style.display = colState[index] ? '' : 'none';
+            });
+        });
+    });
+</script>
+{% endif %}
+
+<script>
+    function disable_input_elements(el_ar){
+        el_ar.forEach(function (element) {
+            var all_element = document.getElementsByClassName(element);
+            for (var i = 0; i < all_element.length; i++) {
+                all_element[i].disabled = true;
+            }
+        });
+    }
+
+    function toggle_user_reponsible_search(btn_id) {
+            var input_id = btn_id.id.split("_")[1];
+            var input = document.getElementById("search-box_" + input_id);
+            var select_input = document.getElementById('employee-select_'+input_id);
+            var emp_text = document.getElementById('emp-text_'+input_id);
+            if (input.style.display === "none") {
+                input.style.display = "block";
+                select_input.style.display = "block";
+                emp_text.style.display = "none";
+                btn_id.innerHTML = '<i class="fas fa-check"></i>'
+            } else {
+                input.style.display = "none";
+                select_input.style.display = "none";
+                emp_text.style.display = "block";
+                btn_id.innerHTML = '<i class="fas fa-pencil-alt"></i>'
+            }
+        }
+    function user_searchBox(loop_num) {
+            var searchBox = $('#search-box_' + loop_num);
+            var dropdown = $('#employee-select_' + loop_num);
+            // console.log("loop", loop_num)
+            var searchQuery = searchBox.val();
+            // console.log("input", searchQuery);
+            if(searchQuery.length > 3){
+                $.ajax({
+                    url: '/user_search_list/',
+                    type: 'GET',
+                    data: { 'search_query': searchQuery },
+                    success: function (response) {
+                        // console.log('data', response)
+                        var options = '';
+                        for (var i = 0; i < response.length; i++) {
+                            options += '<option value="' + response[i].id + '">' + response[i].name + '</option>';
+                        }
+                        dropdown.append(options);
+                        // dropdown.html(data);
+                    }
+                });
+            }
+        }
+
+    let mainCheckbox = document.getElementById('select-all-checkbox');
+    // let toggleCheckboxes = document.querySelectorAll('.toggle');
+
+        // Add an event listener to the main checkbox
+        mainCheckbox.addEventListener('click', function () {
+            // Loop through all toggle checkboxes and set their checked property
+            toggleCheckboxes.forEach(function (checkbox) {
+                checkbox.checked = !mainCheckbox.checked;
+                // Trigger the click event on each toggle checkbox
+                checkbox.click();
+            });
+        });
+    
+    function expandTable() {
+        const tableContainer = document.getElementById('table-container');
+        tableContainer.classList.add('fullscreen');
+        var exit_btn = document.getElementById('myButton');
+        exit_btn.classList.remove('d-none');
+        // sessionStorage.setItem('fullscreen', 'true');
+        localStorage.setItem('isTableFullscreen', true);
+    }
+
+    function exit_full_screen(){
+         const tableContainer = document.getElementById('table-container');
+        tableContainer.classList.remove('fullscreen');
+        var exit_btn = document.getElementById('myButton');
+        exit_btn.classList.add('d-none');
+        // sessionStorage.removeItem('fullscreen');
+        localStorage.removeItem('isTableFullscreen');
+
+    }
+
+    window.onload = function () {
+            const isTableFullscreen = localStorage.getItem('isTableFullscreen');
+            if (isTableFullscreen) {
+                expandTable();
+            }
+    };
+
+    function mark_checklist_important(mysteryId){
+        $('#cover-spin').show(0);
+        fetch("/mark_important_chcklist/", {
+            method: "POST",
+            body: JSON.stringify({
+                'data_obj': mysteryId,
+            }),
+            // Adding headers to the request
+            headers: {
+                "Content-type": "application/json",
+                "X-CSRFToken": "{{ csrf_token }}",
+            },
+        })
+        .then((response) => {
+            // console.log(response);
+            if (response.redirected) {
+                window.location.href = response.url;
+                return;
+            }
+            return response.json();
+        })
+        .then((data) => {
+            // console.log("Success: ", data);
+            if (data.msg == 'success') {
+                $('#cover-spin').hide(0);
+
+                var starIcon = document.getElementById("important_checklist_" + mysteryId);
+
+                if (starIcon.classList.contains("far")) {
+                    // If the star is checked, remove the "checked" class and perform additional actions
+                    starIcon.classList.remove("far");
+                    starIcon.classList.add("fas");
+                    // console.log('2')
+                    // Perform actions for unchecked state
+                } else {
+                    // If the star is unchecked, add the "checked" class and perform additional actions
+                    starIcon.classList.remove("fas");
+                    starIcon.classList.add("far");
+                    // console.log('3')
+                }
+                
+            }
+            else {
+                $('#cover-spin').hide(0);
+                alert('Something went wrong, Please try again after refreshing the page')
+            }
+        });
+    }
+
+    function edit_extra_mystery_data(t, atr_id) {
+        $('#cover-spin').show(0);
+        var got_value = t.value;
+        var checklist_id = atr_id;
+        var value_name = t.name;
+        var final_list = [];
+        try{
+            if(value_name == 'atr_complience'){
+                if(got_value == 'NA'){
+                    console.log('0')
+                    document.getElementById('user_resp_div_'+atr_id).disabled = true;
+                    console.log('1')
+                    // document.getElementById('complience_'+atr_id).style.display = 'none';
+                    console.log('2')
+                    document.getElementById('remark_'+atr_id).disabled = true;
+                    console.log('3')
+                }else{
+                    document.getElementById('user_resp_div_' + atr_id).disabled = false;
+                    // document.getElementById('complience_' + atr_id).style.display = 'block';
+                    document.getElementById('remark_' + atr_id).disabled = false;
+                }
+            }
+        }catch(e){}
+
+        try {
+            mystery_query = {
+                "mystery_id": checklist_id,
+                "mystery_value": got_value,
+                "name" : value_name
+            }
+            if (mystery_query.mystery_id.length > 0) {
+                // console.log('id', scheduler_query.from_dt, scheduler_query.to_dt, scheduler_query.center);
+                final_list.push(mystery_query);
+            } else { 
+                $('#cover-spin').hide(0);
+                alert('Something Went Wrong, please try again after refreshing the page'); 
+            }
+
+        } catch (e) { }
+        // console.log(final_list)
+        fetch("/edit_mystery_extra_data/", {
+            method: "POST",
+            body: JSON.stringify({
+                'data_obj': final_list,
+            }),
+            // Adding headers to the request
+            headers: {
+                "Content-type": "application/json",
+                "X-CSRFToken": "{{ csrf_token }}",
+            },
+        })
+            .then((response) => {
+                // console.log(response);
+                if (response.redirected) {
+                    window.location.href = response.url;
+                    return;
+                }
+                return response.json();
+            })
+            .then((data) => {
+                var mystery_data = data.mystery_json
+                var final_data = mystery_data[0]['fields'];
+                // console.log("Success: ", data);
+                if (data.msg == 'success') {
+                    $('#cover-spin').hide(0);
+                    if(t.value){
+                        t.classList.remove('bg-danger', 'text-white');
+                    }else{
+                        t.classList.add('bg-danger', 'text-white');
+                    }
+
+                    if(value_name == 'user_responsible'){
+                        document.getElementById('emp-text_'+atr_id).innerHTML = $(`#${t.id} option:selected`).text();
+                    }
+
+                    if (value_name == 'atr_complience') {
+                        document.getElementById('ms_compliance_category_'+atr_id).innerHTML = final_data['compliance_category']+ " - " +  final_data['compliance_category_percentage']
+
+                    }
+
+                    // if(value_name == 'status_department'){
+                    //     document.getElementById('department_'+checklist_id).innerHTML = got_value;
+                    // }
+                    // if (value_name == 'status_om'){
+                    //     document.getElementById('om_'+checklist_id).innerHTML = got_value;
+                    // }
+                    // if (value_name == 'audit_status'){
+                    //     document.getElementById('status_audit_'+checklist_id).innerHTML = got_value;
+                    // }
+                }
+                else {
+                    $('#cover-spin').hide(0);
+                    alert('Something went wrong, Please try again after refreshing the page')
+                }
+            });
+    }
+
+    var all_users = {{ all_therapy_ext_emp|safe}}
+    function get_user_list_and_make_userresposible_dropdown(t) {
+            var ms_id_split = t.id.split('_');
+            var ms_id = ms_id_split.pop();
+            $('#cover-spin').show(0);
+            fetch("/sent_selected_user_list_to_frontend/", {
+                method: "POST",
+                body: JSON.stringify({
+                    'audit_id': ms_id,
+                    'audit_name': 'Mystery Shopping',
+                }),
+                // Adding headers to the request
+                headers: {
+                    "Content-type": "application/json",
+                    "X-CSRFToken": "{{ csrf_token }}",
+                },
+            })
+                .then((response) => {
+                    // console.log(response);
+                    if (response.redirected) {
+                        window.location.href = response.url;
+                        return;
+                    }
+                    return response.json();
+                })
+                .then((data) => {
+                    // console.log("Success: ", data);
+                    var selected_user_list = data.user_json;
+                    // var user_list = [7,8,9,10]
+                    if (data.msg == 'success') {
+                        $('#cover-spin').hide(0);
+                        var dropDownId = 'person_responsible_dropdown_' + ms_id;
+                        // console.log('all_user', all_users, dropDownId, user_list)
+                        create_dropdown(dropDownId, dropDownId, all_users, selected_user_list);
+                        var EditBtn = document.getElementById("edit_person_responsible_btn_" + ms_id);
+                        var saveBtn = document.getElementById("save_person_responsible_btn_" + ms_id);
+                        EditBtn.classList.add("d-none");
+                        saveBtn.classList.remove("d-none");
+
+
+                    }
+                    else {
+                        $('#cover-spin').hide(0);
+                        alert('Something went wrong, Please try again after refreshing the page')
+                    }
+                });
+        }
+
+        function save_user_list_and_remove_userresposible_dropdown(t) {
+            var ms_id_split = t.id.split('_');
+            var ms_id = ms_id_split.pop();
+            var selected_ids = $('#person_responsible_dropdown_' + ms_id).val();
+            $('#cover-spin').show(0);
+            fetch("/save_selected_user_responsible/", {
+                method: "POST",
+                body: JSON.stringify({
+                    'audit_id': ms_id,
+                    'audit_name': 'Mystery Shopping',
+                    'audit_value': selected_ids,
+                }),
+                // Adding headers to the request
+                headers: {
+                    "Content-type": "application/json",
+                    "X-CSRFToken": "{{ csrf_token }}",
+                },
+            })
+                .then((response) => {
+                    // console.log(response);
+                    if (response.redirected) {
+                        window.location.href = response.url;
+                        return;
+                    }
+                    return response.json();
+                })
+                .then((data) => {
+                    // console.log("Success: ", data);
+                    var selected_user = data.user_json;
+                    // var user_list = [7,8,9,10]
+                    if (data.msg == 'success') {
+                        $('#cover-spin').hide(0);
+                        var EditBtn = document.getElementById("edit_person_responsible_btn_" + ms_id);
+                        var saveBtn = document.getElementById("save_person_responsible_btn_" + ms_id);
+                        try {
+                            $('#person_responsible_dropdown_' + ms_id).multiselect('destroy');
+                        } catch (e) { }
+                        var dropdownId = document.getElementById('person_responsible_dropdown_' + ms_id);
+                        EditBtn.classList.remove("d-none");
+                        saveBtn.classList.add("d-none");
+
+                        var html = `<span id="person_responsible_dropdown_${ms_id}">`;
+                        if (selected_user.length > 2) {
+                            html += '<span class="text-muted" data-toggle="tooltip" title="';
+                            selected_user.forEach(function (center) {
+                                html += center.name + ','
+                            });
+                            html += '">'
+                            html += selected_user.length + ' selected';
+                        } else {
+                            selected_user.forEach(function (center) {
+                                html += center.name + ','
+                            });
+                        }
+                        html += "</span>";
+                        console.log('drop', dropdownId)
+                        dropdownId.outerHTML = html;
+
+                    }
+                    else {
+                        $('#cover-spin').hide(0);
+                        alert('Something went wrong, Please try again after refreshing the page')
+                    }
+                });
+        }
+
+</script>

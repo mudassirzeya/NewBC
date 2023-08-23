@@ -1,0 +1,525 @@
+{% load static %} 
+<style>
+    .list_table thead {
+        position: sticky;
+        top: 0;
+        /* background-color: rgb(151 112 112); */
+        z-index: 1;
+    }
+</style>
+<br>
+<div class="row justify-content-end mr-2">
+    <div class="mr-2 p-2">
+        {{list_start_index}} - {{list_end_index}} of {{list_total}}
+    </div>
+    <div class="mr-2">
+        <form action="" method="post"> 
+            {% csrf_token %} 
+            <input type="hidden" name="slr_list_csv">
+            <button class="btn btn-success" type="" onclick="this.form.submit(); this.innerHTML = 'Downloading...';">
+                <i class="fas fa-download"></i> CSV
+            </button>
+        </form>
+    </div>
+    <button class="btn btn-outline-primary" data-toggle="modal" data-target="#add_slr_modal">
+        <i class="fas fa-plus"></i> New SLR Salon </button>
+</div>
+<div class="row">
+    <div class="col-md-12">
+        <div class="card p-2">
+            <div class="table-responsive" style="height: 500px;">
+                <table class="table no-wrap user-table mb-0 list_table">
+                    <thead style="background-color: white;">
+                        <tr>
+                            <th scope="col" class="border-0 text-bold" style="width: 5%;"> ID </th>
+                            <th scope="col" class="border-0 text-bold" style="width: 15%;">Audit </th>
+                            <th scope="col" class="border-0 text-bold" style="width: 25%;">Summary</th>
+                            <th scope="col" class="border-0 text-bold" style="width: 10%;" colspan="3"> Action </th>
+                            <!-- <th style="width: 5%;"></th> -->
+                        </tr>
+                    </thead>
+                    <tbody> 
+                        {% for slr_list in all_slr_list %} 
+                        <tr>
+                            <td>
+                                <b>{{slr_list.id}}</b>
+                            </td>
+                            <td style="white-space: normal;">
+                                <span class="text-muted">
+                                    {{slr_list.center|default_if_none:'' }} <br>
+                                    {{slr_list.month_audit|default_if_none:''}} 
+                                    {% if not staffProfile.user_type == 'staff' %} 
+                                    <br> 
+                                    By: {{slr_list.auditor_name|default_if_none:''}} 
+                                    {% endif %} 
+                                </span>
+                            </td>
+                            <td>
+                                <table class="table-bordered">
+                                    <tr>
+                                        <td style="background-color: rgb(179, 244, 179);">{{slr_list.total_question}}</td>
+                                        <td style="background-color: rgb(179, 244, 179);">{{slr_list.total_completed_question}}</td>
+                                        <td {% if slr_list.total_pending_question == 0 %} style="background-color: rgb(179, 244, 179);" {% else %} style="background-color: rgb(239, 180, 180);" {% endif %}>{{slr_list.total_pending_question}}</td>
+                                        <td {% if slr_list.total_action_required_question == 0 %} style="background-color: rgb(179, 244, 179);" {% else %} style="background-color: rgb(239, 180, 180);" {% endif %}>{{slr_list.total_action_required_question}}</td>
+                                        <td {% if slr_list.total_action_required_question == 0 %} style="background-color: rgb(179, 244, 179);" {% else %} style="background-color: rgb(239, 180, 180);" {% endif %}>{{slr_list.total_action_taken_question}}</td>
+                                        <td style="background-color: rgb(179, 244, 179);">{{slr_list.not_rnr}}</td>
+                                        <td {% if slr_list.om_actioned < slr_list.not_rnr %} style="background-color: rgb(239, 180, 180);" {% else %} style="background-color: rgb(179, 244, 179);" {% endif %}>{{slr_list.om_actioned}}</td> 
+                                        <td class="text-center" {% if slr_list.auditor_action_reviewed == True %} style="background-color: rgb(179, 244, 179);" {% else %} style="background-color: rgb(239, 180, 180);" {% endif %}>
+                                            <input type="checkbox" {% if slr_list.auditor_action_reviewed == True %} checked {% endif %} name="auditor_reviewed" id="auditor_reviewed_{{forloop.counter}}" onchange="save_reviewed_checkbox(this, '{{slr_list.id}}')" style="height: 20px; width: 20px;">
+                                        </td>
+                                        <td class="text-center" {% if slr_list.om_action_reviewed == True %} style="background-color: rgb(179, 244, 179);" {% else %} style="background-color: rgb(239, 180, 180);" {% endif %}>
+                                            <input type="checkbox" name="om_reviewed" id="om_reviewed_{{forloop.counter}}" {% if slr_list.om_action_reviewed == True %} checked {% endif %} onchange="save_reviewed_checkbox(this, '{{slr_list.id}}')" style="height: 20px; width: 20px;">
+                                        </td> 
+                                    </tr>
+                                    <tr>
+                                        <td style="background-color: rgb(179, 244, 179);"><small> Total <br> Questions</small></td>
+                                        <td style="background-color: rgb(179, 244, 179);"><small>Completed <br> Questions</small></td>
+                                        <td {% if slr_list.total_pending_question == 0 %} style="background-color: rgb(179, 244, 179);" {% else %} style="background-color: rgb(239, 180, 180);" {% endif %}><small>Pending <br> Questions</small></i></td>
+                                        <td {% if slr_list.total_action_required_question == 0 %} style="background-color: rgb(179, 244, 179);" {% else %} style="background-color: rgb(239, 180, 180);" {% endif %}><small>Action <br> Required</small></td>
+                                        <td {% if slr_list.total_action_required_question == 0 %} style="background-color: rgb(179, 244, 179);" {% else %} style="background-color: rgb(239, 180, 180);" {% endif %}><small>Action <br> Taken</small></td>
+                                        <td style="background-color: rgb(179, 244, 179);"><small>Non RNR <br> Compliance</small></td>
+                                        <td {% if slr_list.om_actioned < slr_list.not_rnr %} style="background-color: rgb(239, 180, 180);" {% else %} style="background-color: rgb(179, 244, 179);" {% endif %}><small>POC Action <br> Completed</small></td>
+                                        <td {% if slr_list.auditor_action_reviewed == True %} style="background-color: rgb(179, 244, 179);" {% else %} style="background-color: rgb(239, 180, 180);" {% endif %}><small>Auditor Action <br> Reviewed</small></td>
+                                        <td {% if slr_list.om_action_reviewed == True %} style="background-color: rgb(179, 244, 179);" {% else %} style="background-color: rgb(239, 180, 180);" {% endif %}><small>POC Action <br> Reviewed</small></td>
+                                    </tr>
+                                </table>
+                            </td> 
+                            <td>
+                                <button class="btn-info" onclick="viewSlrSalonDetail('{{slr_list.id}}')">
+                                    <i class="fas fa-eye"></i></button>
+                            </td>
+                            <td>
+                                <button class="btn-info" id="edit_{{slr_list.id}}" onclick="edit_slr_salon_popup(this)"><i class="fas fa-edit"></i></button>
+                            </td> 
+                            <td>
+                                <button class="btn-info" onclick="redirect_with_filter_to_atr_tab('{{slr_list.id}}')">
+                                    <i class="fas fa-bars"></i>
+                                </button>
+                            </td>
+                        </tr> 
+                        {% endfor %} 
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+<!-- add mystery modal  -->
+<div class="modal fade" id="add_slr_modal" role="dialog" aria-labelledby="exampleModalCenterTitle" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title text-info" id="exampleModalLongTitle">Add New SLR Salon </h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <form method="POST" action="" id="slr_salon_add_form"> 
+                    {% csrf_token %} 
+                    <div class="row">
+                        <div class="col">
+                            <div class="form-group mb-4">
+                                <label class="mr-sm-2" for="inlineFormCustomSelect">Center</label>
+                                {{slr_form.center}}
+                                <!-- <input type="text" class="form-control" placeholder="name.." name="name" id="" required> -->
+                            </div>
+                        </div>
+                        <div class="col">
+                            <div class="form-group mb-4">
+                                <label class="mr-sm-2" for="inlineFormCustomSelect">Auditor Name</label>
+                                {{slr_form.auditor_name}}
+                                <!-- <input type="text" class="form-control" placeholder="password.." name="passcode" id="" required> -->
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col">
+                            <div class="form-group mb-4">
+                                <label class="mr-sm-2" for="inlineFormCustomSelect">Trainer Name</label>
+                                {{slr_form.trainer_name}}
+                                <!-- <input type="text" class="form-control" placeholder="password.." name="passcode" id="" required> -->
+                            </div>
+                        </div>
+                        <div class="col">
+                            <div class="form-group mb-4">
+                                <label class="mr-sm-2" for="inlineFormCustomSelect">Month of Audit</label>
+                                {{slr_form.month_of_audit}}
+                                <!-- <input type="text" class="form-control" placeholder="password.." name="passcode" id="" required> -->
+                            </div>
+                        </div>
+                        <div class="col">
+                            <div class="form-group mb-4">
+                                <label class="mr-sm-2" for="inlineFormCustomSelect">Date of Audit</label>
+                                {{slr_form.date_of_audit}}
+                                <!-- <input type="text" class="form-control" placeholder="password.." name="passcode" id="" required> -->
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col">
+                            <div class="form-group mb-4">
+                                <label class="mr-sm-2" for="">Access Of this Audit</label>
+                                {{slr_form.access_given_to}}
+                                <!-- <input type="text" class="form-control" placeholder="password.." name="passcode" id="" required> -->
+                            </div>
+                        </div>
+                    </div>
+                    <input type="hidden" name="slr_audit_form">
+                    <div class="d-flex justify-content-center">
+                        <button class="btn btn-success" id="slr_salon_submit_btn" type="submit">Add</button>
+                    </div>
+                </form>
+            </div>
+            <!-- <div class="modal-footer">
+                <button type="button" class="btn btn-danger" data-dismiss="modal">Close</button>
+            </div> -->
+        </div>
+    </div>
+</div>
+<!-- edit mystery shopping modal  -->
+<div class="modal fade" id="edit_slr_salon_modal" role="dialog" aria-labelledby="exampleModalCenterTitle" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title text-info" id="exampleModalLongTitle">Edit SLR Salon </h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <form method="POST" action="" id="slr_salon_edit_form"> 
+                    {% csrf_token %} 
+                    <div class="form-group mb-4">
+                        <!-- <label class="mr-sm-2" for="inlineFormCustomSelect">id</label> -->
+                        <!-- {{mystery_form.center}} -->
+                        <input type="hidden" class="form-control" placeholder="name.." name="slr_salon_pk" id="slr_salon_pk" required>
+                    </div>
+                    <div class="row">
+                        <div class="col">
+                            <div class="form-group mb-4">
+                                <label class="mr-sm-2" for="inlineFormCustomSelect">Center</label>
+                                <!-- {{mystery_form.center}} -->
+                                <select class="form-control" name="edit_center" id="edit_center" required>
+                                    <option value="">Select Center</option> 
+                                    {% for center in all_center %} 
+                                    <option value="{{center.id}}">{{center}}</option> 
+                                    {% endfor %}
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col">
+                            <div class="form-group mb-4">
+                                <label class="mr-sm-2" for="inlineFormCustomSelect">Auditor Name</label>
+                                <!-- {{mystery_form.invoice_number}} -->
+                                <input type="text" class="form-control" placeholder="" name="edit_auditor_name" id="edit_auditor_name" required>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col">
+                            <div class="form-group mb-4">
+                                <label class="mr-sm-2" for="inlineFormCustomSelect">Trainer Name</label>
+                                <!-- {{mystery_form.date}} -->
+                                <input type="text" class="form-control" placeholder="" name="edit_trainer_name" id="edit_trainer_name" required>
+                            </div>
+                        </div>
+                        <div class="col">
+                            <div class="form-group mb-4">
+                                <label class="mr-sm-2" for="inlineFormCustomSelect">Month of Audit</label>
+                                <!-- {{mystery_form.date}} -->
+                                <select class="form-control" name="edit_month" id="edit_month" required>
+                                    <option value=""></option> 
+                                    {% for month in all_months %} 
+                                    <option value="{{month.id}}">{{month.month}}</option> 
+                                    {% endfor %}
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col">
+                            <div class="form-group mb-4">
+                                <label class="mr-sm-2" for="inlineFormCustomSelect">Date of Audit</label>
+                                <!-- {{mystery_form.date}} -->
+                                <input type="date" class="form-control" placeholder="" name="edit_date" id="edit_date" required>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col">
+                            <div class="form-group mb-4">
+                                <label class="mr-sm-2" for="">Access Of this Audit</label>
+                                <select name="edit_auditor_access_select" id="edit_auditor_access_select_id" class="form-control select2" multiple="multiple">
+                                    <option value=""></option> 
+                                    {% for auditor in slr_auditors %} 
+                                    <option value="{{auditor.id}}">{{auditor.user.first_name|default_if_none:''}} {{auditor.user.last_name|default_if_none:''}}</option> 
+                                    {% endfor %}
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    <input type="hidden" name="edit_slr_salon">
+                    <div class="d-flex justify-content-center">
+                        <button class="btn btn-lg btn-success" id="slr_salon_edit_btn" type="submit">Update</button> &nbsp; <!-- <button class="btn btn-danger" type="button" onclick="delete_confirmation_show()">Delete</button> -->
+                    </div>
+                </form>
+                <button class="btn btn-sm btn-link" type="button" onclick="delete_confirmation_show()"><i class="fas fa-trash"></i></button>
+            </div>
+            <div class="m-4" id="del_confirm" style="display: none;">
+                <form action="" method="post"> 
+                    {% csrf_token %} 
+                    <div class="form-group mb-4">
+                        <!-- <label class="mr-sm-2" for="inlineFormCustomSelect">slr pk</label> -->
+                        <input type="hidden" name="del_id" id="del_pk">
+                        <!-- <input type="text" class="form-control" placeholder="name.." name="name" id="" required> -->
+                    </div>
+                    <h3 class="text-danger text-center">Are you sure, you want to delete this ?</h3>
+                    <div class="row justify-content-center">
+                        <button type="submit" class="btn btn-primary" name="del_slr_salon">Yes</button> &nbsp; <button type="button" class="btn btn-secondary" data-dismiss="modal">No</button>
+                    </div>
+                </form>
+            </div>
+            <!-- <div class="modal-footer">
+                <button type="button" class="btn btn-danger" data-dismiss="modal">Close</button>
+            </div> -->
+        </div>
+    </div>
+</div>
+<div> 
+    {% if all_slr_list.paginator.num_pages > 1%} <!-- Paginator -->
+    <nav aria-label="Page navigation example">
+        <ul class="pagination justify-content-center">
+            <li class="page-item {% if not all_slr_list.has_previous %} disabled {% endif %}">
+                <a class="page-link" href="?page=1{% for key,value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}" tabindex="-1">FIRST</a>
+            </li>
+            <li class="page-item {% if not all_slr_list.has_previous %} disabled {% endif %}">
+                <a class="page-link" href="{% if all_slr_list.has_previous %}?page={{ all_slr_list.previous_page_number }}{% for key,value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}{% endif %} " tabindex="-1">&laquo;</a>
+            </li> {% if all_slr_list.number|add:'-4' > 1 %} <li class="page-item disabled">
+                <a class="page-link" href="?page={{ all_slr_list.number|add:'-5' }}{% for key,value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">&hellip;</a>
+            </li> {% endif %} {% for i in all_slr_list.paginator.page_range %} {% if all_slr_list.number == i %} <li class="active page-item current ">
+                <a class="page-link" href="?page={{ i }}{% for key,value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">{{ i }}</a>
+            </li> {% elif i > all_slr_list.number|add:'-5' and i < all_slr_list.number|add:'5' %} <li class="page-item">
+                <a class="page-link" href="?page={{ i }}{% for key,value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">{{ i }}</a>
+                </li> {% endif %} {% endfor %} {% if all_slr_list.paginator.num_pages > all_slr_list.number|add:'4' %} <li class="page-item disabled">
+                    <a class="page-link" href="?page={{ all_slr_list.number|add:'5' }}{% for key,value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">&hellip;</a>
+                </li> {% endif %} <li class="page-item {% if not all_slr_list.has_next %} disabled {% endif %}">
+                    <a class="page-link" href="{% if all_slr_list.has_next %} ?page={{ all_slr_list.next_page_number }}{% for key,value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %} {% endif %}">&raquo;</a>
+                </li>
+                <li class="page-item {% if not all_slr_list.has_next %} disabled {% endif %}">
+                    <a class="page-link" href="{% if all_slr_list.has_next %} ?page={{ all_slr_list.paginator.num_pages }}{% for key,value in request.GET.items %}{% if key != 'page' %}&{{ key }}={{ value }}{% endif %}{% endfor %} {% endif %}">LAST</a>
+                </li>
+        </ul>
+    </nav> 
+    {% endif %}
+</div>
+<script>
+    document.getElementById("slr_salon_submit_btn").addEventListener("click", function (event) {
+        event.preventDefault();  // prevent default form submission behavior
+
+        // validate required fields
+        var form = document.getElementById("slr_salon_add_form");
+        var requiredFields = form.querySelectorAll("[required]");
+        var isValid = true;
+        requiredFields.forEach(function (field) {
+            if (!field.value) {
+                field.classList.add("is-invalid");
+                isValid = false;
+            } else {
+                field.classList.remove("is-invalid");
+            }
+        });
+
+        // submit form if validation passes
+        if (isValid) {
+            document.getElementById('slr_salon_submit_btn').disabled = true;
+            document.getElementById('slr_salon_submit_btn').innerHTML = 'Please Wait...'
+            form.submit();
+        }
+    });
+</script>
+<script>
+    document.getElementById("slr_salon_edit_btn").addEventListener("click", function (event) {
+        event.preventDefault();  // prevent default form submission behavior
+
+        // validate required fields
+        var form = document.getElementById("slr_salon_edit_form");
+        var requiredFields = form.querySelectorAll("[required]");
+        var isValid = true;
+        requiredFields.forEach(function (field) {
+            if (!field.value) {
+                field.classList.add("is-invalid");
+                isValid = false;
+            } else {
+                field.classList.remove("is-invalid");
+            }
+        });
+
+        // submit form if validation passes
+        if (isValid) {
+            document.getElementById('slr_salon_edit_btn').disabled = true;
+            document.getElementById('slr_salon_edit_btn').innerHTML = 'Please wait...'
+            form.submit();
+        }
+    });
+</script>
+<script>
+    $(document).ready(function () {
+            $('#edit_auditor_access_select_id').select2({
+                dropdownAutoWidth: true,
+                multiple: true,
+                width: '100%',
+                height: '30px',
+                placeholder: "Select",
+                allowClear: true,
+                // dropdownParent: $('#extra_data_div')
+            });
+        });
+
+    function viewSlrSalonDetail(slr_id) {
+        window.location.href = `/slr_salon/${slr_id}/`;
+        return false;
+    }
+
+    function delete_confirmation_show() {
+        var del_id = document.getElementById('del_pk');
+        var slr_salon_pk = document.getElementById('slr_salon_pk').value;
+        del_id.value = slr_salon_pk;
+        document.getElementById("del_confirm").style.display = 'block';
+    }
+
+    function redirect_with_filter_to_atr_tab(slr_id) {
+        // console.log('id', month, center_id)
+        try {
+            var final_url = `/slr_salon/?select_center=&searched_from_id=${slr_id}&select_month=&searched_text=&searched_kra=&select_audit_status=&searched_om=&searched_dept=`;
+            localStorage.setItem("curr_slrsalonoverview_tag", 'tag-slrsalondetail_tab');
+            // console.log(`cur tag id: `, item.id)
+            window.location.href = final_url;
+            return true;
+        } catch (err) {
+            console.error(err);
+        }
+    }
+
+    function save_reviewed_checkbox(t, slr_audit_id) {
+        $('#cover-spin').show(0);
+        var got_value = t.checked ? t.value : 'off';
+        var slr_id = slr_audit_id;
+        var value_name = t.name;
+        var final_list = [];
+        // console.log(value_name, got_value, mystery_id)
+
+        try {
+            slr_query = {
+                "slr_id": slr_id,
+                "slr_value": got_value,
+                "name": value_name
+            }
+            if (slr_query.slr_id.length > 0) {
+                // console.log('id', scheduler_query.from_dt, scheduler_query.to_dt, scheduler_query.center);
+                final_list.push(slr_query);
+            } else {
+                $('#cover-spin').hide(0);
+                alert('Something Went Wrong, please try again after refreshing the page');
+            }
+
+        } catch (e) { }
+        // console.log(final_list)
+        fetch("/edit_slr_salon_reviewed_data/", {
+            method: "POST",
+            body: JSON.stringify({
+                'data_obj': final_list,
+            }),
+            // Adding headers to the request
+            headers: {
+                "Content-type": "application/json",
+                "X-CSRFToken": "{{ csrf_token }}",
+            },
+        })
+            .then((response) => {
+                // console.log(response);
+                if (response.redirected) {
+                    window.location.href = response.url;
+                    return;
+                }
+                return response.json();
+            })
+            .then((data) => {
+                // console.log("Success: ", data);
+                if (data.msg == 'success') {
+                    $('#cover-spin').hide(0);
+
+                    // if(value_name == 'status_department'){
+                    //     document.getElementById('department_'+checklist_id).innerHTML = got_value;
+                    // }
+                    // if (value_name == 'status_om'){
+                    //     document.getElementById('om_'+checklist_id).innerHTML = got_value;
+                    // }
+                    // if (value_name == 'audit_status'){
+                    //     document.getElementById('status_audit_'+checklist_id).innerHTML = got_value;
+                    // }
+                }
+                else {
+                    $('#cover-spin').hide(0);
+                    alert('Something went wrong, Please try again after refreshing the page')
+                }
+            });
+
+    }
+
+
+    function edit_slr_salon_popup(t) {
+        // console.log('id', t)
+        var btn_id = t.id.split('_')[1];
+        $('#cover-spin').show(0);
+        document.getElementById("del_confirm").style.display = 'none';
+        var auditor_name = document.getElementById('edit_auditor_name');
+        var trainer_name = document.getElementById('edit_trainer_name');
+        var center = document.getElementById('edit_center');
+        var month_audit = document.getElementById('edit_month').value = '';
+        var date = document.getElementById('edit_date');
+        var slr_salon_pk = document.getElementById('slr_salon_pk');
+        var slr_salon_id = btn_id;
+        fetch("/edit_slr_salon_audit/", {
+            method: "POST",
+            body: JSON.stringify({
+                data_obj: slr_salon_id,
+            }),
+            // Adding headers to the request
+            headers: {
+                "Content-type": "application/json",
+                "X-CSRFToken": "{{ csrf_token }}",
+            },
+        })
+            .then((response) => {
+                // console.log(response);
+                if (response.redirected) {
+                    window.location.href = response.url;
+                    return;
+                }
+                return response.json();
+            })
+            .then((data) => {
+                console.log("Success: ", data);
+                var slr_data = data.slr_json
+                var final_data = slr_data[0]['fields'];
+                if (data.msg == 'success') {
+                    // document.getElementById("edit_" + scheduler_id).style.display = 'none';
+                    // console.log('d', final_data)
+                    slr_salon_pk.value = slr_salon_id;
+                    $("#edit_center").children(`[value="${final_data['center']}"]`).prop("selected", true).trigger("change");
+                    auditor_name.value = final_data['auditor_name'];
+                    trainer_name.value = final_data['trainer_name'];
+                    $("#edit_month").children(`[value="${final_data['month_of_audit']}"]`).prop("selected", true).trigger("change");
+                    date.value = final_data['date_of_audit'];
+                    $("#edit_auditor_access_select_id").val(final_data['access_given_to']).trigger('change');
+                    $('#edit_slr_salon_modal').modal('show');
+                    $('#cover-spin').hide(0);
+                }
+                else {
+                    alert('Something went wrong, Please try again after refreshing the page')
+                    $('#cover-spin').hide(0);
+                }
+            });
+
+
+    }
+</script>
