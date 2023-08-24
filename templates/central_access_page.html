@@ -24,7 +24,7 @@
                             <th scope="col" class="border-0 text-uppercase font-medium"> Auditor </th>
                             <th scope="col" class="border-0 text-uppercase font-medium"> Project Owner </th>
                             <th scope="col" class="border-0 text-uppercase font-medium"> Audit Reviewer </th>
-                            <th scope="col" class="border-0 text-uppercase font-medium"> Senior Management </th>
+                            <!-- <th scope="col" class="border-0 text-uppercase font-medium"> Senior Management </th> -->
                             <th></th>
                         </tr>
                     </thead>
@@ -94,7 +94,7 @@
                                     {% endif %}
                                 </span>
                             </td>
-                            <td>
+                            <!-- <td>
                                 <span class="text-muted">
                                     {% if each_access.senior_management.all|length > 2 %}
                                         <span class="text-muted" data-toggle="tooltip" title="{% for each_center in each_access.senior_management.all  %} {{each_center.zenoti_data.name|default_if_none:'' }} {% if not forloop.last %},{% endif %} {% endfor %}">{{ each_access.senior_management.all|length }} Selected</span>
@@ -105,7 +105,7 @@
                                         {% endfor %}
                                     {% endif %}
                                 </span>
-                            </td>
+                            </td> -->
                             <td>
                                 <Button class="btn btn-danger" id="access_{{each_access.id}}" onclick="edit_user_access_popup(this)">
                                     <i class="fas fa-edit" ></i>
@@ -175,7 +175,7 @@
                             {% endfor %}
                         </select>
                     </div>
-                    <div class="form-group mb-4">
+                    <div class="form-group mb-4 d-none">
                         <label class="mr-sm-2" for="inlineFormCustomSelect">Senior Management</label>
                         <select name="senior_management_select" id="dropdown_6" multiple="multiple">
                             <!-- <option value=""></option>  -->
@@ -252,7 +252,7 @@
                             {% endfor %}
                         </select>
                     </div>
-                    <div class="form-group mb-4">
+                    <div class="form-group mb-4 d-none">
                         <label class="mr-sm-2" for="inlineFormCustomSelect">Senior Management</label>
                         <select name="edit_senior_management_select" id="dropdown_12" multiple="multiple">
                             <!-- <option value=""></option>  -->

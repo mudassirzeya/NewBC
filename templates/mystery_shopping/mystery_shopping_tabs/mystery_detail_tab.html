@@ -473,7 +473,7 @@
 
 <script>
     $(document).ready(function () {
-        class_list = ['responsible_person_edit_btn', 'compliance_input', 'remark_input', 'audit_status_input', 'auditor_comment_input', 'action_taken_by_management_input', 'remark_management_input', 'expected_intervene_input', 'remark_department_input', 'status_department_input'];
+        var class_list = ['responsible_person_edit_btn', 'compliance_input', 'remark_input', 'audit_status_input', 'auditor_comment_input', 'action_taken_by_management_input', 'remark_management_input', 'expected_intervene_input', 'remark_department_input', 'status_department_input'];
         var is_project_owner = '{{ is_project_owner }}';
         console.log('user', is_project_owner);
         if (is_project_owner == 'True') {
@@ -522,15 +522,6 @@
 {% endif %}
 
 <script>
-    function disable_input_elements(el_ar){
-        el_ar.forEach(function (element) {
-            var all_element = document.getElementsByClassName(element);
-            for (var i = 0; i < all_element.length; i++) {
-                all_element[i].disabled = true;
-            }
-        });
-    }
-
     function toggle_user_reponsible_search(btn_id) {
             var input_id = btn_id.id.split("_")[1];
             var input = document.getElementById("search-box_" + input_id);

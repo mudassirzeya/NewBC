@@ -1,5 +1,4 @@
 {% load static %}
-{% if is_audit_admin or staffProfile.is_super_admin or is_auditor %}
 <style>
     .list_table thead {
         position: sticky;
@@ -20,10 +19,7 @@
     </div>
     <button class="btn btn-warning text-white" data-toggle="modal" data-target="#add_mystery_modal">
         <i class="fas fa-plus"></i> New MS </button>
-    
 </div>
-{% endif %}
-
 <div class="row">
     <div class="col-md-12">
         <div class="card p-2">
@@ -67,15 +63,13 @@
                                         <td {% if mystery.total_action_required_question == 0 %} style="background-color: rgb(179, 244, 179);" {% else %} style="background-color: rgb(239, 180, 180);" {% endif %}>{{mystery.total_action_taken_question}}</td>
                                         <td style="background-color: rgb(179, 244, 179);">{{mystery.not_rnr}}</td>
                                         <td {% if mystery.om_actioned < mystery.not_rnr  %} style="background-color: rgb(239, 180, 180);" {% else %} style="background-color: rgb(179, 244, 179);"  {% endif %}>{{mystery.om_actioned}}</td>
-                                        {% if is_audit_admin or staffProfile.user_type == 'admin' or is_mystery_shopper %}
                                         <td class="text-center" {% if mystery.auditor_action_reviewed == True %} style="background-color: rgb(179, 244, 179);" {% else %} style="background-color: rgb(239, 180, 180);" {% endif %}>
-                                            <input type="checkbox" {% if mystery.auditor_action_reviewed == True %} checked {% endif %} name="auditor_reviewed" id="auditor_reviewed_{{forloop.counter}}" onchange="save_reviewed_checkbox(this, '{{mystery.id}}')" style="height: 20px; width: 20px;">
+                                            <input class="auditor_reviewed_checkbox_input" type="checkbox" {% if mystery.auditor_action_reviewed == True %} checked {% endif %} name="auditor_reviewed" id="auditor_reviewed_{{forloop.counter}}" onchange="save_reviewed_checkbox(this, '{{mystery.id}}')" style="height: 20px; width: 20px;">
                                         </td>
                                         <td class="text-center" {% if mystery.om_action_reviewed == True %} style="background-color: rgb(179, 244, 179);" {% else %} style="background-color: rgb(239, 180, 180);" {% endif %}>
-                                            <input type="checkbox" name="om_reviewed" id="om_reviewed_{{forloop.counter}}" {% if mystery.om_action_reviewed == True %} checked {% endif %} onchange="save_reviewed_checkbox(this, '{{mystery.id}}')" style="height: 20px; width: 20px;">
+                                            <input class="om_reviewed_checkbox_input" type="checkbox" name="om_reviewed" id="om_reviewed_{{forloop.counter}}" {% if mystery.om_action_reviewed == True %} checked {% endif %} onchange="save_reviewed_checkbox(this, '{{mystery.id}}')" style="height: 20px; width: 20px;">
                                         </td>
-                                        {% else %}
-                                        <td {% if mystery.auditor_action_reviewed == True %} style="background-color: rgb(179, 244, 179);" {% else %} style="background-color: rgb(239, 180, 180);" {% endif %}> 
+                                        <!-- <td {% if mystery.auditor_action_reviewed == True %} style="background-color: rgb(179, 244, 179);" {% else %} style="background-color: rgb(239, 180, 180);" {% endif %}> 
                                             {% if mystery.auditor_action_reviewed == True %} 
                                             <i class="fas fa-thumbs-up"></i> 
                                             {% endif %} 
@@ -84,8 +78,7 @@
                                             {% if mystery.om_action_reviewed == True %} 
                                             <i class="fas fa-check"></i> 
                                             {% endif %} 
-                                        </td>
-                                        {% endif %}
+                                        </td> -->
                                     </tr>
                                     <tr>
                                         <td style="background-color: rgb(179, 244, 179);"><small> Total <br> Questions</small></td>
@@ -99,22 +92,21 @@
                                         <td {% if mystery.om_action_reviewed == True %} style="background-color: rgb(179, 244, 179);" {% else %} style="background-color: rgb(239, 180, 180);" {% endif %}><small>OM Action <br> Reviewed</small></td>
                                     </tr>
                                 </table>
-
                             </td>
-                            {% if is_audit_admin or staffProfile.user_type == 'admin' or is_mystery_shopper %}
                             <td>
-                                <button class="btn-info" onclick="viewMysteryDetail('{{mystery.id}}')">
+                                <button class="btn-info view_detail_btn" onclick="viewMysteryDetail('{{mystery.id}}')">
                                     <i class="fas fa-eye"></i></button>
                             </td>
                             <td>
-                                <button class="btn-info" id="edit_{{mystery.id}}" onclick="edit_mystery_popup(this)"><i class="fas fa-edit"></i></button>
+                                <button class="btn-info edit_list_btn" id="edit_{{mystery.id}}" onclick="edit_mystery_popup(this)"><i class="fas fa-edit"></i></button>
                             </td>
-                            {% endif %}
                             <td>
-                                <button class="btn-info" id="edit_{{mystery.id}}" 
-                                onclick="redirect_with_filter_to_atr_tab('{{mystery.id}}')">
+                                <div class="redirect_to_atr_btn">
+                                    <button class="btn-info" id="edit_{{mystery.id}}" 
+                                    onclick="redirect_with_filter_to_atr_tab('{{mystery.id}}')">
                                     <i class="fas fa-bars"></i>
-                                </button>
+                                    </button>
+                                </div>
                             </td>
                         </tr> 
                         {% endfor %} 
@@ -613,6 +605,17 @@
 </div>
 
 <script>
+    $(document).ready(function () {
+            var class_list = ['auditor_reviewed_checkbox_input', 'om_reviewed_checkbox_input'];
+            var remove_class_list = ['redirect_to_atr_btn']
+            var is_auditor = '{{ is_auditor }}';
+            console.log('user', is_auditor);
+            if (is_auditor == 'True') {
+                console.log('yes')
+                disable_input_elements(class_list);
+                remove_elements(remove_class_list);
+            }
+        });
     document.getElementById("ms_submit_btn").addEventListener("click", function (event) {
             event.preventDefault();  // prevent default form submission behavior
 
@@ -744,7 +747,7 @@
     function redirect_with_filter_to_atr_tab(ms_id){
         // console.log('id', month, center_id)
         try {
-            var final_url = `/mystery_shopping/?select_center=&searched_from_id=${ms_id}&select_month=&searched_text=&searched_kra=&select_audit_status=&searched_om=&searched_dept=`;
+            var final_url = `/mystery_shopping/?searched_from_id=${ms_id}`;
             localStorage.setItem("curr_mysteryoverview_tag", 'tag-mysterydetail_tab');
             // console.log(`cur tag id: `, item.id)
             window.location.href = final_url;

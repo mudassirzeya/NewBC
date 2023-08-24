@@ -163,24 +163,25 @@ def set_center_correspondence_to_usertype(request):
             staff__in=[staffProfile], audit__audit_type=audit_type)
 
         center_dict_set = set()  # Use a set to store unique center dictionaries
+        centers = None
+        if user_type == 'Audit Admin':
+            centers = ExtendedZenotiCenterData.objects.all()
 
-        if user_type in ['Auditor', 'Project Owner', 'Audit Reviewer']:
-            for each_filtered_access in filtered_access:
-                centers = None
-                if user_type == 'Auditor':
-                    centers = each_filtered_access.auditor.all()
-                elif user_type == 'Project Owner':
-                    centers = each_filtered_access.project_owner.all()
-                elif user_type == 'Audit Reviewer':
-                    centers = each_filtered_access.audit_reviewer.all()
+        for each_filtered_access in filtered_access:
+            if user_type == 'Auditor':
+                centers = each_filtered_access.auditor.all()
+            elif user_type == 'Project Owner':
+                centers = each_filtered_access.project_owner.all()
+            elif user_type == 'Audit Reviewer':
+                centers = each_filtered_access.audit_reviewer.all()
 
-                for each_center in centers:
-                    center_dict = {
-                        'id': each_center.id,
-                        'name': each_center.zenoti_data.name
-                    }
-                    center_dict_set.add(
-                        (each_center.id, each_center.zenoti_data.name))
+        for each_center in centers:
+            # center_dict = {
+            #     'id': each_center.id,
+            #     'name': each_center.zenoti_data.name
+            # }
+            center_dict_set.add(
+                (each_center.id, each_center.zenoti_data.name))
 
         unique_center_list = [{'id': center_id, 'name': center_name}
                               for center_id, center_name in center_dict_set]
@@ -211,6 +212,40 @@ def edit_audit_user_modal_popup(request):
     return render(request, "mystery_shopping/mystery_shopping_tabs_page.html")
 
 
+def get_user_access_detail(user, audit_type):
+    all_center_list = ExtendedZenotiCenterData.objects.all()
+    final_access = []
+    final_access_kv = {}
+    temp_access = []
+    filtered_access = CentralAccess.objects.filter(
+        staff__in=[user], audit__audit_type=audit_type)
+    if user.is_audit_admin or user.is_super_admin:
+        final_access.append(['Audit Admin', all_center_list])
+        final_access_kv['Audit Admin'] = all_center_list
+    for each_filtered_access in filtered_access:
+        if each_filtered_access.audit_reviewer.all():
+            if 'Auditor Reviewer' not in temp_access:
+                final_access.append(
+                    ['Auditor Reviewer', each_filtered_access.audit_reviewer.all()])
+                final_access_kv['Auditor Reviewer'] = each_filtered_access.audit_reviewer.all(
+                )
+                temp_access.append('Auditor Reviewer')
+        if each_filtered_access.project_owner.all():
+            if 'Project Owner' not in temp_access:
+                final_access.append(
+                    ['Project Owner', each_filtered_access.project_owner.all()])
+                final_access_kv['Project Owner'] = each_filtered_access.project_owner.all(
+                )
+                temp_access.append('Project Owner')
+        if each_filtered_access.auditor.all():
+            if 'Auditor' not in temp_access:
+                final_access.append(
+                    ['Auditor', each_filtered_access.auditor.all()])
+                final_access_kv['Auditor'] = each_filtered_access.auditor.all()
+                temp_access.append('Auditor')
+    return [final_access, final_access_kv]
+
+
 @login_required(login_url='user_login')
 def mystery_shopping_overview(request):
     current_time = datetime.now().time()
@@ -237,7 +272,14 @@ def mystery_shopping_overview(request):
     all_ext_emp = UserProfile.objects.all().exclude(user__is_superuser=True)
     all_center = ExtendedZenotiCenterData.objects.filter(
         center_status='Active')
+    all_mystery_master = MysteryShoppingOverview.objects.filter(
+        is_deleted=False).order_by('-id')
     all_therapy_ext_emp = []
+    is_auditor = False
+    is_auditor_reviewer = False
+    is_project_owner = False
+    is_audit_admin = False
+
     for each_employee in all_ext_emp:
         tempUserObj = {}
         tempUserObj["id"] = each_employee.id
@@ -245,90 +287,57 @@ def mystery_shopping_overview(request):
         sanitized_last_name = sanitize_name(each_employee.user.last_name)
         tempUserObj["name"] = f"{sanitized_first_name} {sanitized_last_name}"
         all_therapy_ext_emp.append(tempUserObj)
-    is_auditor = False
-    is_auditor_reviewer = False
-    is_audit_admin = False
-    is_project_owner = False
-    filtered_access = CentralAccess.objects.filter(
-        staff__in=[staffProfile], audit__audit_type='Mystery Shopper')
-    all_center_set = set()
-    for each_filtered_access in filtered_access:
-        if search_user_type == 'Auditor' and each_filtered_access.auditor:
-            is_auditor = True
-            all_center_set.update(each_filtered_access.auditor.all())
-        if search_user_type == 'Project Owner' and each_filtered_access.project_owner:
-            is_project_owner = True
-            all_center_set.update(each_filtered_access.project_owner.all())
-        if search_user_type == 'Audit Reviewer' and each_filtered_access.audit_reviewer:
-            is_auditor_reviewer = True
-            all_center_set.update(each_filtered_access.audit_reviewer.all())
-        if search_user_type == 'Audit Admin' and staffProfile.is_audit_admin:
-            is_audit_admin = True
-
-    # all_employee = ExtendedZenotiEmployeesData.objects.all()
-    # Convert the set back to a queryset
-    if all_center_set:
-        all_center = ExtendedZenotiCenterData.objects.filter(
-            id__in=[center.id for center in all_center_set])
-    print('center', all_center)
-    all_mystery = MysteryShoppingOverview.objects.filter(
-        is_deleted=False).order_by('-id')
-    all_mystery_detail = MysteryShoppingDetail.objects.filter(mystery_shopping__in=all_mystery,
-                                                              audit_status__in=['Completed', 'Action Required', 'Action Taken'])
-    all_mystery_image = MysteryShoppingImages.objects.all()
-    print('3', current_time)
-    if is_auditor:
-        all_mystery = MysteryShoppingOverview.objects.filter(
-            Q(added_by=staffProfile) | Q(auditor_access_to=staffProfile), is_deleted=False)
-        all_mystery_detail = all_mystery_detail.filter(
-            mystery_shopping__in=all_mystery)
-        all_mystery_image = all_mystery_image.filter(
-            mystery_shopping__in=all_mystery
-        )
-
-    if is_project_owner:
-        all_center = all_center.filter(id__in=selected_center_ids)
-        all_mystery = all_mystery.filter(
+    access_detail_ar_kv = get_user_access_detail(
+        staffProfile, 'Mystery Shopper')
+    access_detail = access_detail_ar_kv[0]
+    access_detail_kv = access_detail_ar_kv[1]
+    if len(access_detail) == 0:
+        return JsonResponse({"msg": "You Dont HAve access to the Mystery Shopping"})
+    this_user_type = search_user_type
+    if not this_user_type:
+        this_user_type = access_detail[0][0]
+    this_location = access_detail_kv[this_user_type]
+    if this_user_type == 'Audit Admin':
+        all_mystery = all_mystery_master
+    if this_user_type == 'Audit Reviewer':
+        if not selected_center_ids:
+            all_center = this_location
+        else:
+            all_center = all_center.filter(id__in=selected_center_ids)
+        all_mystery = all_mystery_master.filter(
             center__in=all_center, auditor_action_reviewed=True)
-        # print('.....', all_reviewed_mystery)
-        all_mystery_detail = all_mystery_detail.filter(
-            mystery_shopping__in=all_mystery)
-        all_mystery_image = all_mystery_image.filter(
-            mystery_shopping__in=all_mystery)
-
-    if is_auditor_reviewer:
-        all_center = all_center.filter(id__in=selected_center_ids)
-        all_mystery = all_mystery.filter(
+    if this_user_type == 'Project Owner':
+        if not selected_center_ids:
+            all_center = this_location
+        else:
+            all_center = all_center.filter(id__in=selected_center_ids)
+        all_mystery = all_mystery_master.filter(
             center__in=all_center, auditor_action_reviewed=True)
+    if this_user_type == 'Auditor':
+        if not selected_center_ids:
+            all_mystery = all_mystery_master.filter(
+                Q(added_by=staffProfile) | Q(auditor_access_to=staffProfile), is_deleted=False).distinct()
+        else:
+            all_center = all_center.filter(id__in=selected_center_ids)
+            all_mystery = all_mystery_master.filter(
+                Q(added_by=staffProfile) | Q(auditor_access_to=staffProfile), center__in=all_center, is_deleted=False).distinct()
         # print('.....', all_reviewed_mystery)
-        all_mystery_detail = all_mystery_detail.filter(
-            mystery_shopping__in=all_mystery)
-        all_mystery_image = all_mystery_image.filter(
-            mystery_shopping__in=all_mystery)
-        # print('////', all_mystery_detail)
-    print('user_type: ', is_auditor, is_audit_admin,
-          is_project_owner, is_auditor_reviewer)
+
+    all_mystery_detail = MysteryShoppingDetail.objects.filter(
+        mystery_shopping__in=all_mystery)
+    all_mystery_image = MysteryShoppingImages.objects.filter(
+        mystery_shopping__in=all_mystery)
+
     unique_kra_fieled = MysteryShoppingDetail.objects.order_by(
     ).values_list('kra', flat=True).distinct()
     unique_process_fieled = MysteryShoppingDetail.objects.order_by(
     ).values_list('process', flat=True).distinct()
-    try:
-        selected_center = ExtendedZenotiCenterData.objects.filter(
-            id__in=selected_center_ids)
-    except Exception:
-        selected_center = None
 
     try:
         selected_month = MonthAudit.objects.filter(id__in=searched_month)
     except Exception:
         selected_month = None
 
-    if selected_center:
-        all_mystery = all_mystery.filter(center__in=selected_center)
-        all_mystery_detail = all_mystery_detail.filter(
-            center__in=selected_center)
-        all_mystery_image = all_mystery_image.filter(
-            center__in=selected_center)
     if searched_from_id:
         all_mystery = all_mystery.filter(id=int(searched_from_id))
         all_mystery_detail = all_mystery_detail.filter(
@@ -483,6 +492,15 @@ def mystery_shopping_overview(request):
         image_page = page_3.page(image_page_num)
     except EmptyPage:
         image_page = page_3.page(1)
+    print('this_user', this_user_type)
+    if this_user_type == 'Audit Admin':
+        is_audit_admin = True
+    if this_user_type == 'Audit Reviewer':
+        is_auditor_reviewer = True
+    if this_user_type == 'Project Owner':
+        is_project_owner = True
+    if this_user_type == 'Auditor':
+        is_auditor = True
     if request.method == 'POST':
         data_json = open("mistery_data.txt", "r")
         mystery_detail_data = json.loads(data_json.read())
@@ -542,7 +560,7 @@ def mystery_shopping_overview(request):
                     MysteryShoppingDetail.objects.create(
                         mystery_shopping=new_mystery,
                         center=new_mystery.center,
-                        staff=service_responsible,
+                        # staff=service_responsible,
                         month_of_audit=new_mystery.month_of_audit,
                         date=new_mystery.date,
                         sequence=overview['sequence'],
@@ -842,10 +860,12 @@ def mystery_shopping_overview(request):
     context = {'all_mystery': list_page,
                'list_page_query': list_page_query,
                'staffProfile': staffProfile,
+               'access_detail': access_detail,
                'is_audit_admin': is_audit_admin,
                'is_project_owner': is_project_owner,
                'is_auditor': is_auditor,
                'is_auditor_reviewer': is_auditor_reviewer,
+               'this_user_type': this_user_type,
                'mystery_form': mystery_form,
                'all_center': all_center,
                'all_mystery_detail': detail_page,

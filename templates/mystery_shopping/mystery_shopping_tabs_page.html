@@ -1,5 +1,6 @@
 {% extends "base.html" %}
 {% load static %} 
+{% load mystery_extras %}
 {% block breadcrumb %} 
 <h5 class="text-primary mb-0" style="font-weight: bold;">Mystery Shopping</h5> 
 {% endblock breadcrumb %} 
@@ -9,9 +10,24 @@
         <div class="row">
             <div class="col">
                 <div class="form-group">
+                    <label class="text-muted" for="">User Type</label>
+                    <select name="search_user_type" id="search_user_type_id" class="form-control" onchange="get_center_of_usertype(this)">
+                        {% for each_access in access_detail %}
+                        <option {% if this_user_type == each_access.0 %} selected {% endif %}="{{each_access.0}}">{{each_access.0}}</option>
+                        {% endfor %}
+                        <!-- <option {% if search_user_type == 'Senior Management' %} selected {% endif %} value="Senior Management">Senior Management</option> -->
+                    </select>
+                </div>
+            </div>
+            <!-- {% for each_access in access_detail %} {% for each_center in each_access.1 %} {{each_center.zenoti_data.name}} {% endfor %} {% endfor %} -->
+            <div class="col">
+                <div class="form-group">
                     <label class="text-muted" for="">Center</label>
                     <select class="" id="select_center_id" name="select_center" multiple="multiple">
                         <!-- <option value=""></option>  -->
+                            {% for each_center in access_detail.0.1 %}
+                                <option {% if each_center.id|stringformat:'s' in selected_center_id %} selected {% endif %} value="{{each_center.id}}">{{each_center.zenoti_data.name}}</option>
+                            {% endfor %}
                     </select>
                 </div>
             </div>
@@ -36,7 +52,7 @@
             <div class="col">
                 <div class="form-group">
                     <label class="text-muted" for="">Compliance</label>
-                    <select name="searched_compliance" id="searched_compliance_id" class="" multiple="multiple">
+                    <select name="searched_compliance" id="searched_compliance_id" multiple="multiple">
                         <!-- <option value=""> </option>  -->
                         <option {% if 'RNR' in searched_compliance %} selected {% endif %} value="RNR">RNR</option>
                         <option {% if 'Benchmark KRA' in searched_compliance %} selected {% endif %} value="Benchmark KRA">Benchmark KRA</option>
@@ -71,7 +87,9 @@
                     </select>
                 </div>
             </div>
-            <div class="col">
+        </div>
+        <div class="row">
+            <div class="col-2">
                 <div class="form-group">
                     <label class="text-muted" for="">OM Status</label>
                     <select name="searched_om" id="searched_om_id" class="">
@@ -81,7 +99,7 @@
                     </select>
                 </div>
             </div>
-            <div class="col">
+            <div class="col-2">
                 <div class="form-group">
                     <label class="text-muted" for="">Dept. Status</label>
                     <select name="searched_dept" id="searched_dept_id" class="">
@@ -91,8 +109,6 @@
                     </select>
                 </div>
             </div>
-        </div>
-        <div class="row">
             <div class="col-3">
                 <div class="form-group">
                     <label class="text-muted">Remark By Management</label>
@@ -144,19 +160,7 @@
                     </select>
                 </div>
             </div>
-            <div class="col-2">
-                <div class="form-group">
-                    <label class="text-muted" for="">User Type</label>
-                    <select name="search_user_type" id="search_user_type_id" class="form-control" onchange="get_center_of_usertype(this)">
-                        <option value=""></option>
-                        <option {% if search_user_type == 'Auditor' %} selected {% endif %} value="Auditor">Auditor</option>
-                        <option {% if search_user_type == 'Project Owner' %} selected {% endif %} value="Project Owner">Project Owner</option>
-                        <option {% if search_user_type == 'Audit Reviewer' %} selected {% endif %} value="Audit Reviewer">Audit Reviewer</option>
-                        <option {% if search_user_type == 'Audit Admin' %} selected {% endif %} value="Audit Admin">Audit Admin</option>
-                        <!-- <option {% if search_user_type == 'Senior Management' %} selected {% endif %} value="Senior Management">Senior Management</option> -->
-                    </select>
-                </div>
-            </div>
+            
             <div class="col">
                 <br>
                 <div class="row pt-2">
@@ -181,12 +185,14 @@
             <a class="nav-link active " id="tag-mysteryoverview_tab" data-toggle="tab" href="#mysteryoverview_tab" role="tab" aria-controls="home" aria-selected="true" onclick="return saveTabSelect(this)">Lists</a>
         </li>
         {% endif %}
+        {% if not is_auditor %}
         <li class="nav-item">
             <a class="nav-link {% if is_project_owner %} active {% endif %}" id="tag-mysterydetail_tab" data-toggle="tab" href="#mysterydetail_tab" role="tab" aria-controls="profile" aria-selected="false" onclick="return saveTabSelect(this)">ATR</a>
         </li>
         <li class="nav-item">
             <a class="nav-link" id="tag-mysteryimage_tab" data-toggle="tab" href="#mysteryimage_tab" role="tab" aria-controls="profile" aria-selected="false" onclick="return saveTabSelect(this)">Files</a>
         </li>
+        {% endif %}
     </ul>
     <div class="tab-content" id="myTabContent">
         {% if not is_project_owner %}
@@ -194,12 +200,14 @@
             {% include 'mystery_shopping/mystery_shopping_tabs/mystery_overview_tab.html' %} 
         </div>
         {% endif %}
+        {% if not is_auditor %}
         <div class="tab-pane fade {% if is_project_owner %} show active {% endif %}" id="mysterydetail_tab" role="tabpanel" aria-labelledby="profile-tab"> 
             {% include 'mystery_shopping/mystery_shopping_tabs/mystery_detail_tab.html' %} 
         </div>
         <div class="tab-pane fade" id="mysteryimage_tab" role="tabpanel" aria-labelledby="profile-tab"> 
             {% include 'mystery_shopping/mystery_shopping_tabs/mystery_image_list.html' %} 
         </div>
+        {% endif %}
     </div>
 </div>
 <!-- On Reload stay at previous tab -->

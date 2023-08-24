@@ -565,6 +565,26 @@
         oldElement.outerHTML = htmlSelect;
         init(id);
     }
+
+    function disable_input_elements(el_ar) {
+            el_ar.forEach(function (element) {
+                var all_element = document.getElementsByClassName(element);
+                for (var i = 0; i < all_element.length; i++) {
+                    all_element[i].disabled = true;
+                }
+            });
+        }
+    
+    function remove_elements(el_arr) {
+            el_arr.forEach(function (className) {
+                var all_className = document.getElementsByClassName(className);
+                console.log('elem', all_className.length)
+                for (var j = 0; j < all_className.length; j++) {
+                    console.log('class name is', className, 'and count is', j)
+                    all_className[j].innerHTML = '&nbsp';
+                }
+            });
+        }
 </script>
 
 </html>
