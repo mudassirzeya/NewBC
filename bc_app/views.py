@@ -705,6 +705,32 @@ def central_access_page(request):
         center_status='Active')
     all_audit = AuditTypes.objects.all()
     all_access = CentralAccess.objects.all()
+    try:
+        search_user_id = request.GET.get('search_user')
+    except Exception:
+        search_user_id = None
+    try:
+        search_audit_type_id = request.GET.get('search_audit_type')
+    except Exception:
+        search_audit_type_id = None
+    try:
+        search_center_id = request.GET.get('search_center')
+    except Exception:
+        search_center_id = None
+    if search_user_id:
+        selected_user = UserProfile.objects.get(id=int(search_user_id))
+        all_access = all_access.filter(staff=selected_user)
+    if search_audit_type_id:
+        all_access = all_access.filter(
+            audit__audit_type=search_audit_type_id)
+    if search_center_id:
+        selected_center = ExtendedZenotiCenterData.objects.get(
+            id=int(search_center_id))
+        all_access = all_access.filter(
+            Q(auditor=selected_center) |
+            Q(project_owner=selected_center) |
+            Q(audit_reviewer=selected_center)
+        ).distinct()
     if request.method == 'POST':
         if 'add_access_alotment' in request.POST:
             staff_id = request.POST.getlist('staff_select')
@@ -814,7 +840,10 @@ def central_access_page(request):
                'all_center': all_center,
                'all_audit': all_audit,
                'all_users': all_users,
-               'all_access': all_access}
+               'all_access': all_access,
+               'search_user_id': search_user_id,
+               'search_center_id': search_center_id,
+               'search_audit_type_id': search_audit_type_id}
     return render(request, "central_access_page.html", context)
 
 

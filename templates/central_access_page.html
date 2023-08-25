@@ -7,6 +7,53 @@
 {% for message in messages %} 
 <p class="text-danger text-center" id="messages">{{message}}</p> 
 {% endfor %}
+<div class="">
+    <form method="get">
+        <div class="row">
+            <div class="col">
+                <div class="form-group">
+                    <label class="text-muted" for="">Search by User</label>
+                    <select name="search_user" id="search_user_id">
+                        <option value=""></option>
+                        {% for each_user in all_users %}
+                        <option {% if each_user.id|stringformat:'s' == search_user_id %} selected {% endif %} value="{{each_user.id}}">{{each_user.name}}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+            <div class="col">
+                <div class="form-group">
+                    <label class="text-muted" for="">Search by Audit Type</label>
+                    <select name="search_audit_type" id="search_audit_type_id">
+                        <option value=""></option>
+                        <option {% if search_audit_type_id == 'Mystery Shopper' %} selected {% endif %} value="Mystery Shopper">Mystery Shopper</option>
+                        <option {% if search_audit_type_id == 'SLR Auditor' %} selected {% endif %} value="SLR Auditor">SLR Auditor</option>
+                    </select>
+                </div>
+            </div>
+            <div class="col">
+                <div class="form-group">
+                    <label class="text-muted" for="">Search by Center</label>
+                    <select name="search_center" id="search_center_id">
+                        <option value=""></option>
+                        {% for each_central in all_center %}
+                        <option {% if each_central.id|stringformat:'s' == search_center_id %} selected {% endif %} value="{{each_central.id}}">{{each_central.zenoti_data.name}}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+            <div class="col">
+                <br>
+                <div class="row pt-2">
+                    <!-- <label for="">hello</label> -->
+                    <button class="btn btn-success btn-sm mb-2" type="submit" style="font-size: 15px;">
+                        <i class="fas fa-search">&nbsp;</i></button> &nbsp;&nbsp; <a href="{% url 'central_audit_access' %}" class="btn btn-danger btn-sm mb-2" style="font-size: 15px;">
+                        <i class="fas fa-window-close"></i> </a>
+                </div>
+            </div>
+        </div>
+    </form>
+</div>
 <div class="row justify-content-end mr-2">
     <button class="btn btn-outline-primary" data-toggle="modal" data-target="#add_access_modal">
         <i class="fas fa-plus"></i> Add New
@@ -300,6 +347,13 @@
                 init(uid);
             }catch(e){}
         }
+
+        var search_filter_ids = ['search_user_id', 'search_audit_type_id', 'search_center_id']
+        for (var j = 0; j < search_filter_ids.length; j++) {
+            try {
+                init(search_filter_ids[j]);
+            } catch (e) { }
+        }
     });
 
     function delete_confirmation_show() {
@@ -313,6 +367,12 @@
             var btn_id = t.id.split('_')[1];
             $('#cover-spin').show(0);
             var audit_access_id = btn_id;
+            $("#dropdown_7").val('');
+            $("#dropdown_8").val('');
+            $("#dropdown_9").val('');
+            $("#dropdown_10").val('');
+            $("#dropdown_11").val('');
+            $("#dropdown_12").val('');
             fetch("/edit_central_access_popup/", {
                 method: "POST",
                 body: JSON.stringify({
