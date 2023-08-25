@@ -24,7 +24,10 @@ from django.utils.html import strip_tags
 from django.template.loader import render_to_string
 
 # Create your views here.
-api_key = '14d874c8d968487c92b1e5b29b01e4f00261bfcc97d942efb76b7938983f91ff'
+try:
+    api_key = SecretKeyModel.objects.all().first().token
+except Exception:
+    api_key = ''
 
 
 def login_page(request):
