@@ -315,7 +315,7 @@
                         iconElement.classList.remove("fa-trash-check"); // Remove any existing icon class
                         iconElement.classList.add("fa-trash");
                         saveBtn.onclick = function(){
-                            delete_user_response(this, user_resp_query_id);   
+                            delete_user_response(this, data.user_resp_query_id);   
                         }
                        
                         var html_1 = `<span id="person_responsible_dropdown__${ms_id}">${selected_user.name}</span>`;
