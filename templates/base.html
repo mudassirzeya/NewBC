@@ -546,11 +546,15 @@
         }
     
     // this is to create dropdown which i am using codehim's dropdown 
-    function create_dropdown(id, name, all_list, selected_ids = []) {
+    function create_dropdown(id, name, all_list, selected_ids = [], select_type) {
         try {
             $('#' + id).multiselect('destroy');
         } catch (e) { }
-        var htmlSelect = `<select id="${id}" name="${name}" multiple="multiple">`;
+        if (select_type == 'multiple'){
+            var htmlSelect = `<select id="${id}" name="${name}" multiple="multiple">`;
+        }else{
+            var htmlSelect = `<select id="${id}" name="${name}"><option value=""></option>`;
+        }
         var all_options = '';
         all_list.forEach(function (center) {
             if (selected_ids.indexOf(center.id) >= 0) {

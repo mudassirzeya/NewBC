@@ -1,7 +1,7 @@
 from django.shortcuts import render, redirect
 from django.contrib.auth import authenticate, login, logout
 from .models import UserProfile, ZenotiCentersData, ZenotiEmployeesData, SecretKeyModel, ExtendedZenotiEmployeesData, AssociatedRoleOptions, WeekOffOptions, EmployeeRoster, ExtendedZenotiCenterData, ExtendedZenotiEmployeesLeaveData, EmployeeScheduler, SectionOption, Position, OperationOption, ErrorLog, AuditAccess, SlrAudit, SLRSalonAuditAccess, SlrSalonImages, SlrDetail, MonthAudit, UserTypes, CentralAccess, AuditTypes
-from mystery_shopping.models import MysteryShoppingDetail, MysteryShoppingOverview
+from mystery_shopping.models import MysteryShoppingDetail, MysteryShoppingOverview, MysteryChecklistPersonResponsible
 from .forms import ExtendedZenotiDataForm, EmployeeRosterForm, ExtendedZenotiCenterDataForm, SlrAuditForm
 from django.contrib import messages
 from django.http import JsonResponse, HttpResponse
@@ -656,28 +656,26 @@ def sent_selected_user_list_to_frontend(request):
             return JsonResponse({"msg": "failed"})
 
 
-def save_selected_user_responsible(request):
+def sent_all_user_list_and_compliance_to_frontend(request):
     if request.method == "POST":
         data = json.loads(request.body)
         audit_name = data['audit_name']
-        audit_id = data['audit_id']
-        audit_value = data['audit_value']
-        # print(audit_value, audit_id, audit_name)
-        user_query = None
-        all_users = []
-        if audit_id:
+        checklist_id = data['checklist_id']
+        user_query = UserProfile.objects.all().exclude(is_super_admin=True)
+        if checklist_id:
             if audit_name == 'Mystery Shopping':
-                audit_detail_query = MysteryShoppingDetail.objects.get(
-                    id=int(audit_id))
-                try:
-                    user_ids = [int(id) for id in audit_value]
-                    user_query = UserProfile.objects.filter(id__in=user_ids)
-                except Exception:
-                    user_query = None
-                # print('user_q', user_query)
-                audit_detail_query.staff.set(user_query)
-                audit_detail_query.save()
-                # print('yes')
+                checklist_query = MysteryShoppingDetail.objects.get(
+                    id=int(checklist_id))
+                compliance_dropdown = checklist_query.compliance_dropdown
+                list_compliance_dropdown = compliance_dropdown.split(',')
+                print(list_compliance_dropdown)
+                compliance_json = []
+                for each_compliance in list_compliance_dropdown:
+                    temp = {}
+                    temp['id'] = sanitize_name(each_compliance)
+                    temp['name'] = sanitize_name(each_compliance)
+                    compliance_json.append(temp)
+            all_users = []
             for each_user in user_query:
                 tempUserObj = {}
                 tempUserObj["id"] = each_user.id
@@ -685,8 +683,111 @@ def save_selected_user_responsible(request):
                 sanitized_last_name = sanitize_name(each_user.user.last_name)
                 tempUserObj["name"] = f"{sanitized_first_name} {sanitized_last_name}"
                 all_users.append(tempUserObj)
+            return JsonResponse({"msg": "success", "user_json": all_users, "compliance_json": compliance_json})
+        else:
+            return JsonResponse({"msg": "failed"})
+
+
+compliance_category_percentage = {
+    "RNR": 100,
+    "Benchmark KRA": 50,
+    "CPI": 0,
+    "PIP": 0,
+    "Education": 0
+}
+
+
+def save_selected_user_responsible(request):
+    if request.method == "POST":
+        data = json.loads(request.body)
+        audit_name = data['audit_name']
+        audit_id = data['audit_id']
+        selected_compliance = data['selected_compliance']
+        selected_user = data['selected_user']
+        status = data['status']
+        checklist_id = data['checklist_id']
+        try:
+            staff_query = UserProfile.objects.get(id=int(selected_user))
+        except Exception:
+            staff_query = None
+        compliance_category_value = {
+            "Followed": "RNR",
+            "Partially followed": "Benchmark KRA",
+            "Couldn't follow": "CPI",
+            "Not aware": "Education",
+            "Not followed": "PIP",
+            "1": "PIP",
+            "2": "PIP",
+            "3": "PIP",
+            "4": "Benchmark KRA",
+            "5": "RNR",
+            "Like": "RNR",
+            "Partially Like": "Benchmark KRA",
+            "Dislike": "PIP",
+            "Yes": "RNR",
+            "No": "PIP",
+            "May be": "Benchmark KRA",
+            "NA": "NA"
+        }
+        compliance_value = selected_compliance
+
+        try:
+            compliance_category = compliance_category_value[
+                compliance_value]
+        except Exception:
+            compliance_category = ''
+        try:
+            compliance_percentage = compliance_category_percentage[compliance_category_value[
+                compliance_value]]
+        except Exception:
+            compliance_percentage = ''
+        checklist_query = MysteryShoppingDetail.objects.get(
+            id=int(checklist_id))
+        new_person_resp_query = None
+        if status == 'New':
+            if audit_name == 'Mystery Shopping':
+                new_person_resp_query = person_resp_query = MysteryChecklistPersonResponsible.objects.create(
+                    mystery_checklist=checklist_query,
+                    staff=staff_query,
+                    compliance=compliance_value,
+                    compliance_category=compliance_category,
+                    compliance_category_percentage=compliance_percentage
+                )
+        elif status == 'Old':
+            try:
+                person_resp_query = MysteryChecklistPersonResponsible.objects.get(
+                    id=int(audit_id))
+            except Exception:
+                person_resp_query = None
+            person_resp_query.staff = staff_query
+            person_resp_query.compliance = compliance_value
+            person_resp_query.compliance_category = compliance_category
+            person_resp_query.compliance_category_percentage = compliance_percentage
+            person_resp_query.save()
+        tempUserObj = {}
+        tempUserObj["id"] = staff_query.id
+        sanitized_first_name = sanitize_name(staff_query.user.first_name)
+        sanitized_last_name = sanitize_name(staff_query.user.last_name)
+        tempUserObj["name"] = f"{sanitized_first_name} {sanitized_last_name}"
         if audit_id:
-            return JsonResponse({"msg": "success", "user_json": all_users})
+            return JsonResponse({"msg": "success", "user_json": tempUserObj, "compliance": compliance_value, "user_resp_query_id": new_person_resp_query.id})
+        else:
+            return JsonResponse({"msg": "failed"})
+
+
+def delete_user_response(request):
+    if request.method == "POST":
+        data = json.loads(request.body)
+        audit_name = data['audit_name']
+        user_resp_id = data['checklist_id']
+        if user_resp_id:
+            try:
+                user_resp_query = MysteryChecklistPersonResponsible.objects.get(
+                    id=int(user_resp_id))
+            except Exception:
+                user_resp_query = None
+            user_resp_query.delete()
+            return JsonResponse({"msg": "success"})
         else:
             return JsonResponse({"msg": "failed"})
 

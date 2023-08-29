@@ -16,11 +16,11 @@
                         <tr>
                             <th scope="col" class="text-bold" style="width: 10%;"> Detail </th>
                             <th scope="col" class="text-bold" style="width: 20%;"> Checklist </th>
-                            <th scope="col" class="text-bold" style="width: 10%;"> Compliance </th>
+                            <!-- <th scope="col" class="text-bold" style="width: 10%;"> Compliance </th> -->
                             <th scope="col" class="text-bold" style="width: 20%; word-wrap: normal;"> Relative Gaps Found </th>
                             <th scope="col" class="text-bold" style="width: 20%;">Auditor Remarks </th>
-                            <th scope="col" class="text-bold" style="width: 15%;"> Person Responsible </th>
-                            <th></th>
+                            <th scope="col" class="text-bold" style="width: 25%;"> Person Responsible </th>
+                            <!-- <th></th> -->
                         </tr>
                     </thead>
                     <tbody> 
@@ -47,7 +47,7 @@
                                     {{mystery.checklist|default_if_none:'' }}
                                 </span>
                             </td>
-                            <td>
+                            <!-- <td>
                                 <span class="">
                                     <select class="form-control p-0" name="complience_{{mystery.id}}" {% if mystery.mystery_shopping.auditor_action_reviewed == True %} disabled {% endif %}
                                     id="complience_{{forloop.counter}}" onchange="update_exit_check()">
@@ -57,7 +57,7 @@
                                         {% endfor %}
                                     </select>
                                 </span>
-                            </td>
+                            </td> -->
                             <td style="white-space: normal;">
                                 <span class="">
                                     {{mystery.relative_gaps_found|default_if_none:'' }}
@@ -70,27 +70,36 @@
                                     <!-- <textarea type="text" class="form-control" value="{{mystery.remark|default_if_none:'' }}" id="remark_{{forloop.counter}}"> -->
                                 </span>
                             </td>
-                            <td>
-                                <span id="person_responsible_dropdown_{{mystery.id}}">
-                                    {% if mystery.staff.all|length > 2 %}
-                                        <span class="text-muted" data-toggle="tooltip" title="{% for each_staff in mystery.staff.all  %} {{each_staff.user.first_name|default_if_none:'' }} {{each_staff.user.last_name|default_if_none:'' }} {% if not forloop.last %},{% endif %}
-                                        {% endfor %}">{{ mystery.staff.all|length }} Selected</span> 
-                                    {% else %}
-                                        {% for each_staff in mystery.staff.all  %}
-                                        {{each_staff.user.first_name|default_if_none:'' }} {{each_staff.user.last_name|default_if_none:'' }}
-                                        {% if not forloop.last %},{% endif %}
-                                        {% endfor %}
-                                    {% endif %}
-                                </span>
-                            </td>
-                            <td>
-                                {% if not mystery.mystery_shopping.auditor_action_reviewed == True %}
-                                <button class="btn btn-link" id="edit_person_responsible_btn_{{mystery.id}}" onclick="get_user_list_and_make_userresposible_dropdown(this)"><i class="fas fa-edit" ></i></button>
-                                <button class="btn btn-link d-none" id="save_person_responsible_btn_{{mystery.id}}" onclick="save_user_list_and_remove_userresposible_dropdown(this)"><i class="fas fa-check"></i></button>
-                                {% endif %}
+                            <td id="dropdownContainer">
+                                <button class="btn btn-sm btn-link float-right" onclick="addDropdown('{{mystery.id}}')"><i class="fas fa-plus"></i></button>
+                                <table class="table no-wrap user-table mb-0" id="user_responsible_table_{{mystery.id}}">
+                                    <tbody>
+                                    {% for each_user_response in all_user_responsible %} 
+                                        {% if each_user_response.mystery_checklist.id == mystery.id %}
+                                        <tr>
+                                            <td style="width: 40%; white-space: normal;">
+                                                <span id="person_responsible_dropdown__{{each_user_response.id}}">
+                                                    {{each_user_response.staff.user.first_name|default_if_none:'' }} {{each_user_response.staff.user.last_name|default_if_none:'' }}
+                                                </span>
+                                            </td>
+                                            <td style="width: 40%; white-space: normal;">
+                                                <span id="compliance_dropdown__{{each_user_response.id}}">
+                                                    {{each_user_response.compliance|default_if_none:'' }}
+                                                </span>
+                                            </td>
+                                            <td style="white-space: normal;">
+                                                {% if not mystery.mystery_shopping.auditor_action_reviewed == True %} 
+                                                <button class="btn btn-link" onclick="delete_user_response(this, '{{each_user_response.id}}')" id="delete_person_responsible_btn__{{each_user_response.id}}" ><i class="fas fa-trash"></i></button>
+                                                {% endif %}
+                                            </td>
+                                        </tr>
+                                        {% endif %} 
+                                    {% endfor %}
+                                    </tbody>
+                                </table>
                             </td>
                             <td style="display: none;">
-                                <input type="text" value="{{mystery.id}}" id="mystery_id_{{forloop.counter}}">
+                                <input type="hidden" value="{{mystery.id}}" id="mystery_id_{{forloop.counter}}">
                             </td>
                         </tr>
                         {% if mystery.audit_status == 'Action Required' or mystery.audit_status == 'Action Taken' %}
@@ -131,6 +140,31 @@
             <button class="btn btn-success" type="button" onclick="edit_all_data()">Update</button>
         </div>
         {% endif %}
+    </div>
+</div>
+
+
+<!-- delete user-response modal  -->
+<div class="modal fade" id="delete_user_response_modal" tabindex="-1" role="dialog" aria-labelledby="exampleModalCenterTitle" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title text-info" id="exampleModalLongTitle">Delete</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <form method="post" action=""> 
+                    {% csrf_token %} 
+                    <input type="hidden" name="user_del_id" id="user_del_id">
+                    <h3 class="text-center text-danger">Are You Sure You want To delete This Image?</h3>
+                    <div class="d-flex justify-content-center">
+                        <button class="btn btn-danger" name="user_resp_delete" type="submit">Delete</button>
+                    </div>
+                </form>
+            </div>
+        </div>
     </div>
 </div>
 <script>
@@ -206,54 +240,55 @@
         var error_count = 0
         for (var i = 0; i < all_table_rows; i++) {
             var field_id = i + 1
-            var compliance_text = document.getElementById('complience_' + field_id).value;
+            // var compliance_text = document.getElementById('complience_' + field_id).value;
             var remark_text = document.getElementById('remark_' + field_id).value;
             // console.log('yes', field_id);
             var data_obj = {}
-            data_obj['compliance'] = compliance_text;
+            // data_obj['compliance'] = compliance_text;
             data_obj['remark'] = remark_text;
             // data_obj['staff'] = document.getElementById('user_' + field_id).value;
             data_obj['id'] = document.getElementById('mystery_id_' + field_id).value;
-            if (compliance_list.indexOf(compliance_text) !== -1 ){
-                if(remark_text.length > 1){
-                    document.getElementById('remark_error_' + field_id).innerHTML = '';
-                    final_list.push(data_obj);
-                }
-                else{
-                    error_count = error_count + 1;
-                    $('#cover-spin').hide(0);
-                    document.getElementById('remark_error_'+field_id).innerHTML = 'Please write the Remarks';
-                    if(error_count == 1){
-                        document.getElementById('remark_error_' + field_id).scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'nearest'});
-                    }
-                }
-            }else{
-                final_list.push(data_obj);
-            }
+            final_list.push(data_obj)
+            // if (compliance_list.indexOf(compliance_text) !== -1 ){
+            //     if(remark_text.length > 1){
+            //         document.getElementById('remark_error_' + field_id).innerHTML = '';
+            //         final_list.push(data_obj);
+            //     }
+            //     else{
+            //         error_count = error_count + 1;
+            //         $('#cover-spin').hide(0);
+            //         document.getElementById('remark_error_'+field_id).innerHTML = 'Please write the Remarks';
+            //         if(error_count == 1){
+            //             document.getElementById('remark_error_' + field_id).scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'nearest'});
+            //         }
+            //     }
+            // }else{
+            //     final_list.push(data_obj);
+            // }
         }
         console.log(final_list)
         console.log('count', error_count)
-        if(error_count == 0){
-            fetch("/edit_mystery_shopping_profile/", {
-                method: "POST",
-                body: JSON.stringify({
-                    'data_obj': final_list,
-                }),
-                // Adding headers to the request
-                headers: {
-                    "Content-type": "application/json",
-                    "X-CSRFToken": "{{ csrf_token }}",
-                },
+        
+        fetch("/edit_mystery_shopping_profile/", {
+            method: "POST",
+            body: JSON.stringify({
+                'data_obj': final_list,
+            }),
+            // Adding headers to the request
+            headers: {
+                "Content-type": "application/json",
+                "X-CSRFToken": "{{ csrf_token }}",
+            },
+        })
+            .then((response) => {
+                // console.log(response);
+                if (response.redirected) {
+                    window.location.href = response.url;
+                    return;
+                }
+                return response.json();
             })
-                .then((response) => {
-                    // console.log(response);
-                    if (response.redirected) {
-                        window.location.href = response.url;
-                        return;
-                    }
-                    return response.json();
-                })
-                .then((data) => {
+            .then((data) => {
                     // console.log("Success: ", data);
                     if (data.msg == 'success') {
                         // $('#cover-spin').hide(0);
@@ -265,9 +300,7 @@
                         $('#cover-spin').hide(0);
                     }
                 });
-        }else{
-             console.log('error');
-        }
+
     }
 </script>
 <script>
@@ -306,4 +339,67 @@
     //             }
     //         });
     //     });
+</script>
+
+<script>
+    let rowCount = 0; // Counter for generating unique IDs
+
+        function addDropdown(checklist_id) {
+            rowCount++;
+            const table = document.getElementById('user_responsible_table_'+checklist_id);
+            var newRow = document.createElement('tr');
+            newRow.innerHTML = `
+                <td style="width: 40%; white-space: normal;">
+                    <span id="person_responsible_dropdown__${rowCount}new"></span>
+                </td>
+                <td style="width: 40%; white-space: normal;">
+                    <span id="compliance_dropdown__${rowCount}new"></span>
+                </td>
+                <td style="white-space: normal;">
+                    <div class="row">
+                        <button class="btn btn-link" name="save_person_responsible_btn__${checklist_id}" id="save_person_responsible_btn__${rowCount}new" onclick="save_user_responsible_and_remove_userresposible_dropdown(this, 'New')">
+                            <i class="fas fa-check"></i>
+                        </button>
+                    </div>
+                </td>
+            `;
+            $('#cover-spin').show(0);
+            fetch("/sent_all_user_list_and_compliance_to_frontend/", {
+                method: "POST",
+                body: JSON.stringify({
+                    'checklist_id': checklist_id,
+                    'audit_name': 'Mystery Shopping',
+                }),
+                // Adding headers to the request
+                headers: {
+                    "Content-type": "application/json",
+                    "X-CSRFToken": "{{ csrf_token }}",
+                },
+            })
+                .then((response) => {
+                    // console.log(response);
+                    if (response.redirected) {
+                        window.location.href = response.url;
+                        return;
+                    }
+                    return response.json();
+                })
+                .then((data) => {
+                    // console.log("Success: ", data);
+                    var person_responsible_list = data.user_json;
+                    var compliance_list = data.compliance_json;
+                    if (data.msg == 'success') {
+                        $('#cover-spin').hide(0);
+                        table.appendChild(newRow);
+                        create_dropdown(`person_responsible_dropdown__${rowCount}new`, `person_responsible_dropdown__${rowCount}new`, person_responsible_list, 'single')
+                        create_dropdown(`compliance_dropdown__${rowCount}new`, `compliance_dropdown__${rowCount}new`, compliance_list, 'single')
+                    }
+                    else {
+                        $('#cover-spin').hide(0);
+                        alert('Something went wrong, Please try again after refreshing the page')
+                    }
+                });
+        
+        }
+
 </script>

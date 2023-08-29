@@ -5,7 +5,7 @@ from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.views.decorators.csrf import csrf_exempt
 from datetime import date, timedelta, datetime
-from .models import MysteryShoppingOverview, MysteryShoppingDetail, MysteryShoppingImages, MonthAudit
+from .models import MysteryShoppingOverview, MysteryShoppingDetail, MysteryShoppingImages, MonthAudit, MysteryChecklistPersonResponsible
 from bc_app.models import UserProfile, ZenotiEmployeesData, ZenotiCentersData, ExtendedZenotiCenterData, ExtendedZenotiEmployeesData, ExtendedZenotiEmployeesLeaveData, UserTypes, MonthAudit, AuditAccess, AuditTypes, CentralAccess
 from bc_app.views import sanitize_name
 from .forms import MysteryShoppingForm
@@ -224,12 +224,12 @@ def get_user_access_detail(user, audit_type):
         final_access_kv['Audit Admin'] = all_center_list
     for each_filtered_access in filtered_access:
         if each_filtered_access.audit_reviewer.all():
-            if 'Auditor Reviewer' not in temp_access:
+            if 'Audit Reviewer' not in temp_access:
                 final_access.append(
-                    ['Auditor Reviewer', each_filtered_access.audit_reviewer.all()])
-                final_access_kv['Auditor Reviewer'] = each_filtered_access.audit_reviewer.all(
+                    ['Audit Reviewer', each_filtered_access.audit_reviewer.all()])
+                final_access_kv['Audit Reviewer'] = each_filtered_access.audit_reviewer.all(
                 )
-                temp_access.append('Auditor Reviewer')
+                temp_access.append('Audit Reviewer')
         if each_filtered_access.project_owner.all():
             if 'Project Owner' not in temp_access:
                 final_access.append(
@@ -297,6 +297,8 @@ def mystery_shopping_overview(request):
     if not this_user_type:
         this_user_type = access_detail[0][0]
     this_location = access_detail_kv[this_user_type]
+    all_mystery = MysteryShoppingOverview.objects.none()
+    print('user', this_user_type == 'Audit Re')
     if this_user_type == 'Audit Admin':
         all_mystery = all_mystery_master
     if this_user_type == 'Audit Reviewer':
@@ -304,8 +306,9 @@ def mystery_shopping_overview(request):
             all_center = this_location
         else:
             all_center = all_center.filter(id__in=selected_center_ids)
+        print('cent', all_center)
         all_mystery = all_mystery_master.filter(
-            center__in=all_center, auditor_action_reviewed=True)
+            center__in=all_center)
     if this_user_type == 'Project Owner':
         if not selected_center_ids:
             all_center = this_location
@@ -951,22 +954,6 @@ def mark_important_chcklist(request):
 def mystery_shopping_detail(request, pk):
     user = request.user
     staffProfile = UserProfile.objects.get(user=user)
-    is_audit_admin = staffProfile.user_type_name.filter(
-        user_type='Audit Admin').exists()
-    is_mystery_shopper = staffProfile.user_type_name.filter(
-        user_type='Mystery Shopper').exists()
-    is_revenue_auditor = staffProfile.user_type_name.filter(
-        user_type='Revenue Auditor').exists()
-    is_cyber_security_auditor = staffProfile.user_type_name.filter(
-        user_type='Cyber Security Auditor').exists()
-    is_corporate_auditor = staffProfile.user_type_name.filter(
-        user_type='Corporate Auditor').exists()
-    is_slr_auditor = staffProfile.user_type_name.filter(
-        user_type='SLR Auditor').exists()
-    is_rar_onfloor_auditor = staffProfile.user_type_name.filter(
-        user_type='RAR OnFloor Auditor').exists()
-    is_rar_oncall_auditor = staffProfile.user_type_name.filter(
-        user_type='RAR OnCall Auditor').exists()
     try:
         mystery_shopping = MysteryShoppingOverview.objects.get(id=int(pk))
     except Exception:
@@ -977,6 +964,8 @@ def mystery_shopping_detail(request, pk):
         associated_center=mystery_shopping.center)
     all_mystery_detail = MysteryShoppingDetail.objects.filter(
         ~Q(kra='Service Agent'), mystery_shopping=mystery_shopping,)
+    all_user_responsible = MysteryChecklistPersonResponsible.objects.filter(
+        mystery_checklist__in=all_mystery_detail)
     all_service_agent_mystery_detail_1 = MysteryShoppingDetail.objects.filter(
         mystery_shopping=mystery_shopping, kra='Service Agent', service_number='1')
     all_service_agent_mystery_detail_2 = MysteryShoppingDetail.objects.filter(
@@ -1014,18 +1003,19 @@ def mystery_shopping_detail(request, pk):
             except Exception:
                 mystery_image = None
             mystery_image.delete()
+        if 'user_resp_delete' in request.POST:
+            user_resp_id = request.POST.get('user_del_id')
+            try:
+                user_resp = MysteryChecklistPersonResponsible.objects.get(
+                    id=int(user_resp_id))
+            except Exception:
+                user_resp = None
+            user_resp.delete()
 
         return redirect('mystery_shopping_detail', pk=pk)
     context = {'all_mystery_detail': all_mystery_detail,
                'staffProfile': staffProfile,
-               'is_audit_admin': is_audit_admin,
-               'is_mystery_shopper': is_mystery_shopper,
-               'is_revenue_auditor': is_revenue_auditor,
-               'is_cyber_security_auditor': is_cyber_security_auditor,
-               'is_corporate_auditor': is_corporate_auditor,
-               'is_slr_auditor': is_slr_auditor,
-               'is_rar_onfloor_auditor': is_rar_onfloor_auditor,
-               'is_rar_oncall_auditor': is_rar_oncall_auditor,
+               'all_user_responsible': all_user_responsible,
                'all_employee': all_employee,
                'total_length': all_mystery_detail.count(),
                'total_service_agent_length': all_service_agent_mystery_detail_1.count(),
@@ -1125,31 +1115,31 @@ def edit_mystery_shopping_profile(request):
             for query in got_query:
                 mystery_shopping_detail = MysteryShoppingDetail.objects.get(
                     id=int(query['id']))
-                try:
-                    employee = UserProfile.objects.filter(
-                        id__in=query['staff'])
-                except Exception:
-                    employee = None
-                compliance_value = query['compliance']
-                mystery_shopping_detail.compliance = query['compliance']
+                # try:
+                #     employee = UserProfile.objects.filter(
+                #         id__in=query['staff'])
+                # except Exception:
+                #     employee = None
+                # compliance_value = query['compliance']
+                # mystery_shopping_detail.compliance = query['compliance']
                 mystery_shopping_detail.remark = query['remark']
                 # mystery_shopping_detail.staff.set(employee)
-                try:
-                    mystery_shopping_detail.compliance_category = compliance_category_value[
-                        compliance_value]
-                except Exception:
-                    mystery_shopping_detail.compliance_category = ''
-                try:
-                    mystery_shopping_detail.compliance_category_percentage = compliance_category_percentage[compliance_category_value[
-                        compliance_value]]
-                except Exception:
-                    mystery_shopping_detail.compliance_category_percentage = ''
-                if query['compliance'] == 'NA':
-                    mystery_shopping_detail.remark = ''
-                if (query['compliance'] and employee) or (query['compliance'] == 'NA'):
-                    mystery_shopping_detail.audit_status = 'Completed'
-                if (not query['compliance'] or (not query['compliance'] == 'NA' and not employee)):
-                    mystery_shopping_detail.audit_status = 'Pending'
+                # try:
+                #     mystery_shopping_detail.compliance_category = compliance_category_value[
+                #         compliance_value]
+                # except Exception:
+                #     mystery_shopping_detail.compliance_category = ''
+                # try:
+                #     mystery_shopping_detail.compliance_category_percentage = compliance_category_percentage[compliance_category_value[
+                #         compliance_value]]
+                # except Exception:
+                #     mystery_shopping_detail.compliance_category_percentage = ''
+                # if query['compliance'] == 'NA':
+                #     mystery_shopping_detail.remark = ''
+                # if (query['compliance'] and employee) or (query['compliance'] == 'NA'):
+                #     mystery_shopping_detail.audit_status = 'Completed'
+                # if (not query['compliance'] or (not query['compliance'] == 'NA' and not employee)):
+                #     mystery_shopping_detail.audit_status = 'Pending'
                 mystery_shopping_detail.save()
                 # print(query)
             return JsonResponse({"msg": "success"})

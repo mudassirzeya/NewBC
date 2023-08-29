@@ -106,6 +106,23 @@ class MysteryShoppingDetail(models.Model):
         return str(self.mystery_shopping.center.zenoti_data.display_name) + str(self.sequence)
 
 
+class MysteryChecklistPersonResponsible(models.Model):
+    mystery_checklist = models.ForeignKey(
+        MysteryShoppingDetail, null=True,
+        blank=True, on_delete=models.CASCADE
+    )
+    staff = models.ForeignKey(
+        UserProfile, blank=True, null=True, on_delete=models.SET_NULL)
+    compliance = models.CharField(max_length=200, null=True, blank=True)
+    compliance_category = models.CharField(
+        max_length=200, null=True, blank=True)
+    compliance_category_percentage = models.CharField(
+        max_length=20, null=True, blank=True)
+
+    def __str__(self):
+        return str(self.mystery_checklist.center.zenoti_data.display_name) + str(self.compliance)
+
+
 class MysteryShoppingImages(models.Model):
     mystery_shopping = models.ForeignKey(
         MysteryShoppingOverview, null=True,

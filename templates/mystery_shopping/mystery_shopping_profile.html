@@ -215,6 +215,7 @@
         side_navbar.classList.add('d-none');
     }
     var all_users = {{ all_therapy_ext_emp|safe }}
+
     function get_user_list_and_make_userresposible_dropdown(t) {
             var ms_id_split = t.id.split('_');
             var ms_id = ms_id_split.pop();
@@ -248,7 +249,7 @@
                         $('#cover-spin').hide(0);
                         var dropDownId = 'person_responsible_dropdown_'+ms_id;
                         // console.log('all_user', all_users, dropDownId, user_list)
-                        create_dropdown(dropDownId, dropDownId, all_users, selected_user);
+                        create_dropdown(dropDownId, dropDownId, all_users, selected_user, 'single');
                         var EditBtn = document.getElementById("edit_person_responsible_btn_" + ms_id);
                         var saveBtn = document.getElementById("save_person_responsible_btn_" + ms_id);
                         EditBtn.classList.add("d-none");
@@ -263,17 +264,85 @@
                 });
         }
     
-    function save_user_list_and_remove_userresposible_dropdown(t) {
-        var ms_id_split = t.id.split('_');
-        var ms_id = ms_id_split.pop();
-        var selected_ids = $('#person_responsible_dropdown_'+ms_id).val();
+    function save_user_responsible_and_remove_userresposible_dropdown(t, status) {
+        var ms_id = t.id.split('__')[1];
+        var checklist_id = t.name.split('__')[1];
+        var selected_user = document.getElementById('person_responsible_dropdown__'+ms_id).value;
+        var selected_compliance = document.getElementById('compliance_dropdown__'+ms_id).value;
+        if (selected_user.length > 0 && selected_compliance.length > 0){
+            $('#cover-spin').show(0);
+            fetch("/save_selected_user_responsible/", {
+                method: "POST",
+                body: JSON.stringify({
+                    'audit_id': ms_id,
+                    'audit_name': 'Mystery Shopping',
+                    'selected_user': selected_user,
+                    'selected_compliance': selected_compliance,
+                    'status':status,
+                    'checklist_id': checklist_id,
+                }),
+                // Adding headers to the request
+                headers: {
+                    "Content-type": "application/json",
+                    "X-CSRFToken": "{{ csrf_token }}",
+                },
+            })
+                .then((response) => {
+                    // console.log(response);
+                    if (response.redirected) {
+                        window.location.href = response.url;
+                        return;
+                    }
+                    return response.json();
+                })
+                .then((data) => {
+                    // console.log("Success: ", data);
+                    var selected_user = data.user_json;
+                    var selected_compliance = data.compliance;
+                    // var user_list = [7,8,9,10]
+                    if (data.msg == 'success') {
+                        $('#cover-spin').hide(0);
+                        var delBtn = document.getElementById("edit_person_responsible_btn__" + ms_id);
+                        var saveBtn = document.getElementById("save_person_responsible_btn__" + ms_id);
+                        try {
+                            $('#person_responsible_dropdown__' + ms_id).multiselect('destroy');
+                            $('#compliance_dropdown__' + ms_id).multiselect('destroy');
+                        } catch (e) { }
+                        var userRespdropdownId = document.getElementById('person_responsible_dropdown__'+ms_id);
+                        var compliancepdropdownId = document.getElementById('compliance_dropdown__' + ms_id);
+                        // delBtn.classList.remove("d-none");
+                        var iconElement = saveBtn.querySelector("i");
+                        iconElement.classList.remove("fa-trash-check"); // Remove any existing icon class
+                        iconElement.classList.add("fa-trash");
+                        saveBtn.onclick = function(){
+                            delete_user_response(this, user_resp_query_id);   
+                        }
+                       
+                        var html_1 = `<span id="person_responsible_dropdown__${ms_id}">${selected_user.name}</span>`;
+                        userRespdropdownId.outerHTML = html_1;
+
+                        var html_2 = `<span id="compliance_dropdown__${ms_id}">${selected_compliance}</span>`;
+                        compliancepdropdownId.outerHTML = html_2;
+                    
+                    }
+                    else {
+                        $('#cover-spin').hide(0);
+                        alert('Something went wrong, Please try again after refreshing the page')
+                    }
+                });
+
+        }else{
+            alert("Kindly Complete Both 'Input Person Responsible' and 'Compliance' Fields")
+        }
+    }
+
+    function delete_user_response(t, user_response_id) {
         $('#cover-spin').show(0);
-        fetch("/save_selected_user_responsible/", {
+        fetch("/delete_user_response/", {
             method: "POST",
             body: JSON.stringify({
-                'audit_id': ms_id,
+                'checklist_id': user_response_id,
                 'audit_name': 'Mystery Shopping',
-                'audit_value': selected_ids,
             }),
             // Adding headers to the request
             headers: {
@@ -291,41 +360,19 @@
             })
             .then((data) => {
                 // console.log("Success: ", data);
-                var selected_user = data.user_json;
-                // var user_list = [7,8,9,10]
                 if (data.msg == 'success') {
                     $('#cover-spin').hide(0);
-                    var EditBtn = document.getElementById("edit_person_responsible_btn_" + ms_id);
-                    var saveBtn = document.getElementById("save_person_responsible_btn_" + ms_id);
-                    try {
-                        $('#person_responsible_dropdown_' + ms_id).multiselect('destroy');
-                    } catch (e) { }
-                    var dropdownId = document.getElementById('person_responsible_dropdown_'+ms_id);
-                    EditBtn.classList.remove("d-none");
-                    saveBtn.classList.add("d-none");
-                   
-                    var html = `<span id="person_responsible_dropdown_${ms_id}">`;
-                    if(selected_user.length > 2){
-                        html += '<span class="text-muted" data-toggle="tooltip" title="';
-                        selected_user.forEach(function (center) {
-                            html += center.name + ',' 
-                        });
-                        html+= '">'
-                        html+= selected_user.length + ' selected';
-                    }else{
-                        selected_user.forEach(function (center) {
-                            html += center.name + ','
-                        });
+                    var row = t.closest("tr"); // Get the parent <tr> element
+                    if (row) {
+                        row.remove(); // Remove the entire row
                     }
-                    html+= "</span>";
-                    console.log('drop', dropdownId)
-                    dropdownId.outerHTML = html;
                 }
                 else {
                     $('#cover-spin').hide(0);
                     alert('Something went wrong, Please try again after refreshing the page')
                 }
             });
+
     }
 
 </script>

@@ -320,7 +320,7 @@
                 // var final_data = mystery_data[0]['fields'];
                 if (data.msg == 'success') {
                     console.log('val', t.selected_value)
-                    create_dropdown('select_center_id', 'select_center', center_data, t.selected_value)
+                    create_dropdown('select_center_id', 'select_center', center_data, t.selected_value, 'multiple')
                 }
                 else {
                     alert('Something went wrong, Please try again after refreshing the page')

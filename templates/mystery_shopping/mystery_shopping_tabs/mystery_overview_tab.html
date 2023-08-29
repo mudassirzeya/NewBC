@@ -884,7 +884,7 @@
                     // var user_list_str = '{{ all_therapy_ext_emp|escapejs|safe }}';
                     // var user_list = JSON.parse(user_list_str);
                     // console.log('user', user_list)
-                    create_dropdown('edit_auditor_access_to_id', 'edit_auditor_access_to', user_list, final_data['auditor_access_to'])
+                    create_dropdown('edit_auditor_access_to_id', 'edit_auditor_access_to', user_list, final_data['auditor_access_to'], 'multiple')
                     mystery_pk.value = mystery_id;
                     // employee.value = final_data['employee'];
                     $("#edit_center").children(`[value="${final_data['center']}"]`).prop("selected", true).trigger("change");
