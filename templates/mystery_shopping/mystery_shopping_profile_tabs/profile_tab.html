@@ -18,8 +18,8 @@
                             <th scope="col" class="text-bold" style="width: 20%;"> Checklist </th>
                             <!-- <th scope="col" class="text-bold" style="width: 10%;"> Compliance </th> -->
                             <th scope="col" class="text-bold" style="width: 20%; word-wrap: normal;"> Relative Gaps Found </th>
-                            <th scope="col" class="text-bold" style="width: 20%;">Auditor Remarks </th>
-                            <th scope="col" class="text-bold" style="width: 25%;"> Person Responsible </th>
+                            <!-- <th scope="col" class="text-bold" style="width: 20%;">Auditor Remarks </th> -->
+                            <th scope="col" class="text-bold" style="width: 45%;"> Person Responsible </th>
                             <!-- <th></th> -->
                         </tr>
                     </thead>
@@ -63,13 +63,12 @@
                                     {{mystery.relative_gaps_found|default_if_none:'' }}
                                 </span>
                             </td>
-                            <td>
+                            <!-- <td>
                                 <span class="">
                                     <textarea class="form-control" {% if mystery.mystery_shopping.auditor_action_reviewed == True %} readonly {% endif %} name="" id="remark_{{forloop.counter}}" rows="3" onchange="update_exit_check()">{{mystery.remark|default_if_none:'' }}</textarea>
                                     <span class="text-danger" id="remark_error_{{forloop.counter}}"></span>
-                                    <!-- <textarea type="text" class="form-control" value="{{mystery.remark|default_if_none:'' }}" id="remark_{{forloop.counter}}"> -->
                                 </span>
-                            </td>
+                            </td> -->
                             <td id="dropdownContainer">
                                 <button class="btn btn-sm btn-link float-right" onclick="addDropdown('{{mystery.id}}')"><i class="fas fa-plus"></i></button>
                                 <table class="table no-wrap user-table mb-0" id="user_responsible_table_{{mystery.id}}">
@@ -77,20 +76,28 @@
                                     {% for each_user_response in all_user_responsible %} 
                                         {% if each_user_response.mystery_checklist.id == mystery.id %}
                                         <tr>
-                                            <td style="width: 40%; white-space: normal;">
+                                            <td style="width: 30%; white-space: normal;">
                                                 <span id="person_responsible_dropdown__{{each_user_response.id}}">
                                                     {{each_user_response.staff.user.first_name|default_if_none:'' }} {{each_user_response.staff.user.last_name|default_if_none:'' }}
                                                 </span>
                                             </td>
-                                            <td style="width: 40%; white-space: normal;">
+                                            <td style="width: 30%; white-space: normal;">
                                                 <span id="compliance_dropdown__{{each_user_response.id}}">
                                                     {{each_user_response.compliance|default_if_none:'' }}
                                                 </span>
                                             </td>
+                                            <td style="width: 30%; white-space: normal;">
+                                                <span id="auditor_remark__{{each_user_response.id}}">
+                                                    {{each_user_response.remark|default_if_none:'' }}
+                                                </span>
+                                            </td>
                                             <td style="white-space: normal;">
-                                                {% if not mystery.mystery_shopping.auditor_action_reviewed == True %} 
-                                                <button class="btn btn-link" onclick="delete_user_response(this, '{{each_user_response.id}}')" id="delete_person_responsible_btn__{{each_user_response.id}}" ><i class="fas fa-trash"></i></button>
-                                                {% endif %}
+                                                <div class="row">
+                                                    {% if not mystery.mystery_shopping.auditor_action_reviewed == True %} 
+                                                    <button class="btn btn-link" onclick="get_user_list_and_make_userresposible_dropdown('{{each_user_response.id}}', 'Old')" id="edit_person_responsible_btn__{{each_user_response.id}}"><i class="fas fa-edit"></i></button>
+                                                    <button class="btn btn-link" onclick="delete_user_response(this, '{{each_user_response.id}}')" id="remove_person_responsible_row__{{each_user_response.id}}" ><i class="fas fa-trash"></i></button>
+                                                    {% endif %}
+                                                </div>
                                             </td>
                                         </tr>
                                         {% endif %} 
@@ -349,16 +356,25 @@
             const table = document.getElementById('user_responsible_table_'+checklist_id);
             var newRow = document.createElement('tr');
             newRow.innerHTML = `
-                <td style="width: 40%; white-space: normal;">
+                <td style="width: 30%; white-space: normal;">
                     <span id="person_responsible_dropdown__${rowCount}new"></span>
                 </td>
-                <td style="width: 40%; white-space: normal;">
+                <td style="width: 30%; white-space: normal;">
                     <span id="compliance_dropdown__${rowCount}new"></span>
+                </td>
+                <td style="width: 30%; white-space: normal;">
+                    <span id="auditor_remark__${rowCount}new">
+                        <textarea class="form-control" id="remark__${rowCount}new" rows="3"></textarea>
+                        <span class="text-danger" id="remark_error__${rowCount}new"></span>
+                    </span>
                 </td>
                 <td style="white-space: normal;">
                     <div class="row">
-                        <button class="btn btn-link" name="save_person_responsible_btn__${checklist_id}" id="save_person_responsible_btn__${rowCount}new" onclick="save_user_responsible_and_remove_userresposible_dropdown(this, 'New')">
+                        <button class="btn btn-link" name="edit_person_responsible_btn__${checklist_id}" id="edit_person_responsible_btn__${rowCount}new" onclick="save_user_responsible_and_remove_userresposible_dropdown(this, 'New')">
                             <i class="fas fa-check"></i>
+                        </button>
+                        <button class="btn btn-link" id="remove_person_responsible_row__${rowCount}new" onclick="remove_person_responsible_row(this)">
+                            <i class="fas fa-trash"></i>
                         </button>
                     </div>
                 </td>

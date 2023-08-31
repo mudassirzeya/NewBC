@@ -515,17 +515,17 @@ def mystery_shopping_overview(request):
                 service_agent_id_3 = request.POST.get('add_service_agent_3')
                 auditor_ids = request.POST.getlist('add_auditor_access_to')
                 try:
-                    agent_1 = ExtendedZenotiEmployeesData.objects.get(
+                    agent_1 = UserProfile.objects.get(
                         id=int(service_agent_id_1))
                 except Exception:
                     agent_1 = None
                 try:
-                    agent_2 = ExtendedZenotiEmployeesData.objects.get(
+                    agent_2 = UserProfile.objects.get(
                         id=int(service_agent_id_2))
                 except Exception:
                     agent_2 = None
                 try:
-                    agent_3 = ExtendedZenotiEmployeesData.objects.get(
+                    agent_3 = UserProfile.objects.get(
                         id=int(service_agent_id_3))
                 except Exception:
                     agent_3 = None
@@ -560,12 +560,8 @@ def mystery_shopping_overview(request):
                         # continue
                         audit_status = ''
                     # print('ser', service_responsible)
-                    MysteryShoppingDetail.objects.create(
+                    new_mystery_detail = MysteryShoppingDetail.objects.create(
                         mystery_shopping=new_mystery,
-                        center=new_mystery.center,
-                        # staff=service_responsible,
-                        month_of_audit=new_mystery.month_of_audit,
-                        date=new_mystery.date,
                         sequence=overview['sequence'],
                         client_journey=overview['client_journey'],
                         kra=overview['kra'],
@@ -574,11 +570,16 @@ def mystery_shopping_overview(request):
                         relative_gaps_found=overview['relative_gaps_found'],
                         compliance_dropdown=overview['dropdown'],
                         service_number=overview['service_number'],
-                        service_availed_1=new_mystery.service_availed_1,
-                        service_availed_2=new_mystery.service_availed_2,
-                        service_availed_3=new_mystery.service_availed_3,
                         audit_status=audit_status
                     )
+
+                    if overview['service_number'] in ['1', '2', '3']:
+                        MysteryChecklistPersonResponsible.objects.create(
+                            mystery_checklist=new_mystery_detail,
+                            staff=service_responsible,
+                            service_number=overview['service_number'],
+                        )
+
         if 'del_mystery' in request.POST:
             del_mystery_id = request.POST.get('del_id')
             try:
@@ -653,17 +654,17 @@ def mystery_shopping_overview(request):
                 month_query = None
 
             try:
-                agent_1 = ExtendedZenotiEmployeesData.objects.get(
+                agent_1 = UserProfile.objects.get(
                     id=int(service_agent_id_1))
             except Exception:
                 agent_1 = None
             try:
-                agent_2 = ExtendedZenotiEmployeesData.objects.get(
+                agent_2 = UserProfile.objects.get(
                     id=int(service_agent_id_2))
             except Exception:
                 agent_2 = None
             try:
-                agent_3 = ExtendedZenotiEmployeesData.objects.get(
+                agent_3 = UserProfile.objects.get(
                     id=int(service_agent_id_3))
             except Exception:
                 agent_3 = None
@@ -698,20 +699,21 @@ def mystery_shopping_overview(request):
             mystery.save()
 
             for each_detail in mystery_detail:
-                each_detail.center = center
-                each_detail.date = date
-                each_detail.month_of_audit = month_query
-                each_detail.service_availed_1 = service_availed_1
-                each_detail.service_availed_2 = service_availed_2
-                each_detail.service_availed_3 = service_availed_3
-                # print('status', each_detail.sequence,
-                #       each_detail.audit_status, len(each_detail.audit_status))
+                try:
+                    mystery_user_resp = MysteryChecklistPersonResponsible.objects.filter(
+                        mystery_checklist=each_detail
+                    ).first()
+                except Exception:
+                    mystery_user_resp = None
+
                 if each_detail.service_number == '1':
-                    each_detail.staff = mystery.service_agent_1
+                    mystery_user_resp.staff = mystery.service_agent_1
                 if each_detail.service_number == '2':
-                    each_detail.staff = mystery.service_agent_2
+                    mystery_user_resp.staff = mystery.service_agent_2
                 if each_detail.service_number == '3':
-                    each_detail.staff = mystery.service_agent_3
+                    mystery_user_resp.staff = mystery.service_agent_3
+                mystery_user_resp.save()
+
                 if ((each_detail.service_number == '1' and mystery.service_availed_1 and mystery.service_agent_1) or (each_detail.service_number == '2' and mystery.service_availed_2 and mystery.service_agent_2) or (each_detail.service_number == '3' and mystery.service_availed_3 and mystery.service_agent_3)) and len(each_detail.audit_status) < 3:
                     each_detail.audit_status = 'Pending'
 
@@ -722,7 +724,9 @@ def mystery_shopping_overview(request):
                     each_detail.compliance_category = ''
                     each_detail.compliance_category_percentage = ''
                     each_detail.remark = ''
-                    each_detail.staff = None
+                    mystery_user_resp.staff = None
+                    mystery_user_resp.save()
+                    # each_detail.staff = None
                     each_detail.remark_by_om = ''
                     each_detail.action_taken_by_outlet_manager = ''
                     each_detail.status_by_om = ''
@@ -732,10 +736,6 @@ def mystery_shopping_overview(request):
                     each_detail.remark_by_department = ''
                     each_detail.status_by_department = ''
                 each_detail.save()
-
-            for each_file in mystery_files:
-                each_file.center = center
-                each_file.save()
         if 'mystery_csv' in request.POST:
             csv_headers = [
                 'Mystery ID', 'Checklist ID', 'Series No', 'Center', 'Month of Audit', 'Client Journey', 'KRA', 'Process', 'Checklist', 'Compliance', 'Compliance Category', 'Compliance Category Percentage', 'Relative Gaps Found', 'User Responsible', 'Service Availed', 'Remark By Auditor', 'Action Taken By Outlet Manager', 'Status By Om', 'Remark By OM', 'Action Taken By Management', 'Remark By Management', 'Expected Dept/Personnel to Intervene', 'Remark By Department', 'Status By Department'

@@ -553,15 +553,24 @@
         if (select_type == 'multiple'){
             var htmlSelect = `<select id="${id}" name="${name}" multiple="multiple">`;
         }else{
-            var htmlSelect = `<select id="${id}" name="${name}"><option value=""></option>`;
+            var htmlSelect = `<select class="form-control" id="${id}" name="${name}"><option value=""></option>`;
         }
         var all_options = '';
-        all_list.forEach(function (center) {
-            if (selected_ids.indexOf(center.id) >= 0) {
-                var temp = `<option value="${center.id}" selected="selected">${center.name}</option>`;
-                all_options = temp + all_options;
-            } else {
-                all_options += `<option value="${center.id}">${center.name}</option>`;
+        all_list.forEach(function (each_resp) {
+            if (Array.isArray(selected_ids)) {
+                if (selected_ids.indexOf(each_resp.id)) {
+                    var temp = `<option value="${each_resp.id}" selected="selected">${each_resp.name}</option>`;
+                    all_options = temp + all_options;
+                } else {
+                    all_options += `<option value="${each_resp.id}">${each_resp.name}</option>`;
+                }
+            }else{
+                 if (selected_ids === each_resp.id) {
+                    var temp = `<option value="${each_resp.id}" selected="selected">${each_resp.name}</option>`;
+                    all_options = temp + all_options;
+                } else {
+                    all_options += `<option value="${each_resp.id}">${each_resp.name}</option>`;
+                }
             }
         });
         htmlSelect += all_options +'</select>';

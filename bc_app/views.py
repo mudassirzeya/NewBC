@@ -644,14 +644,19 @@ def sent_selected_user_list_to_frontend(request):
         audit_name = data['audit_name']
         audit_id = data['audit_id']
         if audit_id:
+            audit_detail_query = None
             if audit_name == 'Mystery Shopping':
-                audit_detail_query = MysteryShoppingDetail.objects.get(
+                audit_detail_query = MysteryChecklistPersonResponsible.objects.get(
                     id=int(audit_id))
-
-            all_users = []
-            for each_user in audit_detail_query.staff.all():
-                all_users.append(each_user.id)
-            return JsonResponse({"msg": "success", "user_json": all_users})
+                all_compliance = audit_detail_query.mystery_checklist.compliance_dropdown
+                all_compliance_array = all_compliance.split(",")
+                all_compliance_list = []
+                for each_compliance in all_compliance_array:
+                    temp = {}
+                    temp['id'] = sanitize_name(each_compliance)
+                    temp['name'] = sanitize_name(each_compliance)
+                    all_compliance_list.append(temp)
+            return JsonResponse({"msg": "success", "user_json": audit_detail_query.staff.id, "selected_compliance": audit_detail_query.compliance, "remark": audit_detail_query.remark, "all_compliance_list": all_compliance_list})
         else:
             return JsonResponse({"msg": "failed"})
 
@@ -706,6 +711,7 @@ def save_selected_user_responsible(request):
         selected_user = data['selected_user']
         status = data['status']
         checklist_id = data['checklist_id']
+        get_remark = data['get_remark']
         try:
             staff_query = UserProfile.objects.get(id=int(selected_user))
         except Exception:
@@ -741,19 +747,24 @@ def save_selected_user_responsible(request):
                 compliance_value]]
         except Exception:
             compliance_percentage = ''
-        checklist_query = MysteryShoppingDetail.objects.get(
-            id=int(checklist_id))
-        new_person_resp_query = None
+
+        person_resp_query = None
         if status == 'New':
+            try:
+                checklist_query = MysteryShoppingDetail.objects.get(
+                    id=int(checklist_id))
+            except Exception:
+                checklist_query = None
             if audit_name == 'Mystery Shopping':
-                new_person_resp_query = person_resp_query = MysteryChecklistPersonResponsible.objects.create(
+                person_resp_query = MysteryChecklistPersonResponsible.objects.create(
                     mystery_checklist=checklist_query,
                     staff=staff_query,
                     compliance=compliance_value,
                     compliance_category=compliance_category,
-                    compliance_category_percentage=compliance_percentage
+                    compliance_category_percentage=compliance_percentage,
+                    remark=get_remark
                 )
-        elif status == 'Old':
+        elif status == 'Old' or status == 'Old-New':
             try:
                 person_resp_query = MysteryChecklistPersonResponsible.objects.get(
                     id=int(audit_id))
@@ -763,6 +774,7 @@ def save_selected_user_responsible(request):
             person_resp_query.compliance = compliance_value
             person_resp_query.compliance_category = compliance_category
             person_resp_query.compliance_category_percentage = compliance_percentage
+            person_resp_query.remark = get_remark
             person_resp_query.save()
         tempUserObj = {}
         tempUserObj["id"] = staff_query.id
@@ -770,7 +782,7 @@ def save_selected_user_responsible(request):
         sanitized_last_name = sanitize_name(staff_query.user.last_name)
         tempUserObj["name"] = f"{sanitized_first_name} {sanitized_last_name}"
         if audit_id:
-            return JsonResponse({"msg": "success", "user_json": tempUserObj, "compliance": compliance_value, "user_resp_query_id": new_person_resp_query.id})
+            return JsonResponse({"msg": "success", "user_json": tempUserObj, "compliance": compliance_value, "user_resp_query_id": person_resp_query.id, "get_remark": get_remark})
         else:
             return JsonResponse({"msg": "failed"})
 
