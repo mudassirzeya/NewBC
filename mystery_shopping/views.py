@@ -268,24 +268,24 @@ def mystery_shopping_overview(request):
         'searched_personal_intervene')
     search_imp_checklist = request.GET.get('search_imp_checklist')
     search_user_type = request.GET.get('search_user_type')
-    all_ext_emp = UserProfile.objects.all().exclude(user__is_superuser=True)
+    all_employee_query = UserProfile.objects.all().exclude(user__is_superuser=True)
     all_center = ExtendedZenotiCenterData.objects.filter(
         center_status='Active')
     all_mystery_master = MysteryShoppingOverview.objects.filter(
         is_deleted=False).order_by('-id')
-    all_therapy_ext_emp = []
+    all_employee_list = []
     is_auditor = False
     is_auditor_reviewer = False
     is_project_owner = False
     is_audit_admin = False
 
-    for each_employee in all_ext_emp:
+    for each_employee in all_employee_query:
         tempUserObj = {}
         tempUserObj["id"] = each_employee.id
         sanitized_first_name = sanitize_name(each_employee.user.first_name)
         sanitized_last_name = sanitize_name(each_employee.user.last_name)
         tempUserObj["name"] = f"{sanitized_first_name} {sanitized_last_name}"
-        all_therapy_ext_emp.append(tempUserObj)
+        all_employee_list.append(tempUserObj)
     access_detail_ar_kv = get_user_access_detail(
         staffProfile, 'Mystery Shopper')
     access_detail = access_detail_ar_kv[0]
@@ -942,14 +942,15 @@ def mystery_shopping_overview(request):
                     ).first()
                 except Exception:
                     mystery_user_resp = None
-
-                if each_detail.service_number == '1':
-                    mystery_user_resp.staff = mystery.service_agent_1
-                if each_detail.service_number == '2':
-                    mystery_user_resp.staff = mystery.service_agent_2
-                if each_detail.service_number == '3':
-                    mystery_user_resp.staff = mystery.service_agent_3
-                mystery_user_resp.save()
+                # print('ms', mystery_user_resp)
+                if mystery_user_resp:
+                    if each_detail.service_number == '1':
+                        mystery_user_resp.staff = mystery.service_agent_1
+                    if each_detail.service_number == '2':
+                        mystery_user_resp.staff = mystery.service_agent_2
+                    if each_detail.service_number == '3':
+                        mystery_user_resp.staff = mystery.service_agent_3
+                    mystery_user_resp.save()
 
                 if ((each_detail.service_number == '1' and mystery.service_availed_1 and mystery.service_agent_1) or (each_detail.service_number == '2' and mystery.service_availed_2 and mystery.service_agent_2) or (each_detail.service_number == '3' and mystery.service_availed_3 and mystery.service_agent_3)) and len(each_detail.audit_status) < 3:
                     each_detail.audit_status = 'Pending'
@@ -961,8 +962,9 @@ def mystery_shopping_overview(request):
                     each_detail.compliance_category = ''
                     each_detail.compliance_category_percentage = ''
                     each_detail.remark = ''
-                    mystery_user_resp.staff = None
-                    mystery_user_resp.save()
+                    if mystery_user_resp:
+                        mystery_user_resp.staff = None
+                        mystery_user_resp.save()
                     # each_detail.staff = None
                     each_detail.remark_by_om = ''
                     each_detail.action_taken_by_outlet_manager = ''
@@ -1049,15 +1051,18 @@ def mystery_shopping_overview(request):
                     month_audit = ''
 
                 try:
-                    service_agent_1 = each_mystery.service_agent_1.zenoti_data.employee_name
+                    service_agent_1 = each_mystery.service_agent_1.user.first_name + \
+                        ' ' + each_mystery.service_agent_1.user.last_name
                 except Exception:
                     service_agent_1 = ''
                 try:
-                    service_agent_2 = each_mystery.service_agent_2.zenoti_data.employee_name
+                    service_agent_2 = each_mystery.service_agent_2.user.first_name + \
+                        ' ' + each_mystery.service_agent_2.user.last_name
                 except Exception:
                     service_agent_2 = ''
                 try:
-                    service_agent_3 = each_mystery.service_agent_3.zenoti_data.employee_name
+                    service_agent_3 = each_mystery.service_agent_3.user.first_name + \
+                        ' ' + each_mystery.service_agent_3.user.last_name
                 except Exception:
                     service_agent_3 = ''
                 rows.append([
@@ -1134,7 +1139,7 @@ def mystery_shopping_overview(request):
                'searched_dept': searched_dept,
                'searched_om': searched_om,
                'all_months': all_months,
-               'all_therapy_ext_emp': all_therapy_ext_emp,
+               'all_employee_list': all_employee_list,
                'search_user_type': search_user_type}
     return render(request, "mystery_shopping/mystery_shopping_tabs_page.html", context)
 

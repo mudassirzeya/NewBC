@@ -250,7 +250,7 @@
                                     <label class="mr-sm-2" for="inlineFormCustomSelect">Service Agent</label>
                                     <select class="select2 form-control" name="add_service_agent_1" id="add_service_agent_1" style="width: 100%;" required>
                                         <option value=""></option> 
-                                        {% for agent in all_therapy_ext_emp %} 
+                                        {% for agent in all_employee_list %} 
                                         <option value="{{agent.id}}">{{agent.name}}</option> 
                                         {% endfor %}
                                     </select>
@@ -273,7 +273,7 @@
                                     </div>
                                     <select class="select2 form-control" name="add_service_agent_2" id="add_service_agent_2" style="width: 100%;" onchange="add_ms_required_field(this)">
                                         <option value=""></option> 
-                                        {% for agent in all_therapy_ext_emp %} 
+                                        {% for agent in all_employee_list %} 
                                         <option value="{{agent.id}}">{{agent.name}}</option> 
                                         {% endfor %}
                                     </select>
@@ -291,7 +291,7 @@
                                     <label class="mr-sm-2" for="inlineFormCustomSelect">Service Agent</label>
                                     <select class="select2 form-control" name="add_service_agent_3" id="add_service_agent_3" style="width: 100%;" onchange="add_ms_required_field(this)">
                                         <option value=""></option> 
-                                        {% for agent in all_therapy_ext_emp %} 
+                                        {% for agent in all_employee_list %} 
                                         <option value="{{agent.id}}">{{agent.name}}</option> 
                                         {% endfor %}
                                     </select>
@@ -308,7 +308,7 @@
                                 <label class="mr-sm-2" for="inlineFormCustomSelect">Auditors</label>
                                 <select name="add_auditor_access_to" id="add_auditor_access_to_id" multiple="multiple">
                                     <!-- <option value=""></option>  -->
-                                    {% for agent in all_therapy_ext_emp %} 
+                                    {% for agent in all_employee_list %} 
                                     <option value="{{agent.id}}">{{agent.name}}</option> 
                                     {% endfor %}
                                 </select>
@@ -474,7 +474,7 @@
                                     <label for="">Service Agent</label>
                                     <select class="select2 form-control" name="edit_service_ag_1" id="edit_service_ag_1" required style="width: 100%;">
                                         <option value=""></option> 
-                                        {% for agent in all_therapy_ext_emp %} 
+                                        {% for agent in all_employee_list %} 
                                         <option value="{{agent.id}}">{{agent.name}}</option> 
                                         {% endfor %}
                                     </select>
@@ -491,7 +491,7 @@
                                     <select class="select2 form-control" name="edit_service_ag_2" id="edit_service_ag_2" 
                                     style="width: 100%;" onchange="makeFieldRequired(this)">
                                         <option value=""></option> 
-                                        {% for agent in all_therapy_ext_emp %} 
+                                        {% for agent in all_employee_list %} 
                                         <option value="{{agent.id}}">{{agent.name}}</option> 
                                         {% endfor %}
                                     </select>
@@ -507,7 +507,7 @@
                                     <label for="">Service Agent</label>
                                     <select class="select2 form-control" name="edit_service_ag_3" id="edit_service_ag_3" style="width: 100%;" onchange="makeFieldRequired(this)">
                                         <option value=""></option> 
-                                        {% for agent in all_therapy_ext_emp %} 
+                                        {% for agent in all_employee_list %} 
                                         <option value="{{agent.id}}">{{agent.name}}</option> 
                                         {% endfor %}
                                     </select>
@@ -521,8 +521,8 @@
                             <div class="form-group mb-4">
                                 <label class="mr-sm-2" for="inlineFormCustomSelect">Auditors</label>
                                 <select name="edit_auditor_access_to" id="edit_auditor_access_to_id" multiple="multiple">
-                                    <!-- <option value=""></option>  -->
-                                    {% for agent in all_therapy_ext_emp %} 
+                                    <!-- <option value=""></option> -->
+                                    {% for agent in all_employee_list %} 
                                     <option value="{{agent.id}}">{{agent.name}}</option> 
                                     {% endfor %}
                                 </select>
@@ -853,6 +853,7 @@
         var service_availed_3 = document.getElementById('edit_service_av_3');
         var service_agent_3 = document.getElementById('edit_service_ag_3').value = '';
         var mystery_pk = document.getElementById('mystery_pk');
+        $("#edit_auditor_access_to_id").val('');
         var mystery_id = btn_id;
         fetch("/edit_mystery_shopping/", {
             method: "POST",
@@ -877,16 +878,16 @@
                 console.log("Success: ", data);
                 var mystery_data = data.mystery_json
                 var final_data = mystery_data[0]['fields'];
-                var user_list = data.user_json
+                var user_list = data.user_json;
+                console.log('user1', final_data['auditor_access_to'])
                 if (data.msg == 'success') {
                     // document.getElementById("edit_" + scheduler_id).style.display = 'none';
                     // console.log('d', final_data)
-                    // var user_list_str = '{{ all_therapy_ext_emp|escapejs|safe }}';
-                    // var user_list = JSON.parse(user_list_str);
-                    // console.log('user', user_list)
-                    create_dropdown('edit_auditor_access_to_id', 'edit_auditor_access_to', user_list, final_data['auditor_access_to'], 'multiple')
+                    // console.log('user', final_data['auditor_access_to'])
+                    // create_dropdown('edit_auditor_access_to_id', 'edit_auditor_access_to', user_list, final_data['auditor_access_to'], 'multiple')
                     mystery_pk.value = mystery_id;
                     // employee.value = final_data['employee'];
+                    $("#edit_auditor_access_to_id").multiselect('select', final_data['auditor_access_to']);
                     $("#edit_center").children(`[value="${final_data['center']}"]`).prop("selected", true).trigger("change");
                     shopper_name.value = final_data['shopper_name'];
                     phone.value = final_data['mobile'];
@@ -909,7 +910,7 @@
                     $("#edit_service_ag_2").children(`[value="${final_data['service_agent_2']}"]`).prop("selected", true).trigger("change");
                     service_availed_3.value = final_data['service_availed_3'];
                     $("#edit_service_ag_3").children(`[value="${final_data['service_agent_3']}"]`).prop("selected", true).trigger("change");
-                    console.log('check', final_data['auditor_completed'])
+                    // console.log('check', final_data['auditor_completed'])
                     // if(final_data['auditor_completed'] == true){
                     //     auditor_completed.checked = true;
                     // }else{
