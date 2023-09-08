@@ -32,10 +32,6 @@
                                         <i class="fas fa-check-circle text-primary"></i>
                                     {% elif mystery.audit_status == 'Pending' %}
                                         <i class="far fa-circle text-primary "></i>
-                                    {% elif mystery.audit_status == 'Action Required' %} 
-                                        <i class="fas fa-exclamation-circle text-danger accordion-toggle" data-toggle="collapse" data-target="#profile_{{mystery.id}}"></i>
-                                    {% elif mystery.audit_status == 'Action Taken' %} 
-                                    <i class="fas fa-exclamation-circle text-success accordion-toggle" data-toggle="collapse" data-target="#profile_{{mystery.id}}"></i>
                                     {% endif %}
                                     {{mystery.client_journey|default_if_none:'' }} - {{mystery.kra|default_if_none:'' }} <br>
                                     {{mystery.process|default_if_none:'' }}
@@ -44,7 +40,8 @@
                             <td style="white-space: normal;">
                                 <span class="">
                                     <b>{{mystery.mystery_shopping.id}} -  {{mystery.sequence}} </b> <br>
-                                    {{mystery.checklist|default_if_none:'' }}
+                                    {{mystery.checklist|default_if_none:'' }} <br>
+                                    {{mystery.audit_status}}
                                 </span>
                             </td>
                             <!-- <td>
@@ -69,15 +66,20 @@
                                     <span class="text-danger" id="remark_error_{{forloop.counter}}"></span>
                                 </span>
                             </td> -->
-                            <td id="dropdownContainer">
+                            <td id="">
                                 <button class="btn btn-sm btn-link float-right" onclick="addDropdown('{{mystery.id}}')"><i class="fas fa-plus"></i></button>
                                 <table class="table no-wrap user-table mb-0" id="user_responsible_table_{{mystery.id}}">
                                     <tbody>
-                                    {% for each_user_response in all_user_responsible %} 
+                                    {% for each_user_response in all_user_responsible_profile %} 
                                         {% if each_user_response.mystery_checklist.id == mystery.id %}
                                         <tr>
                                             <td style="width: 30%; white-space: normal;">
                                                 <span id="person_responsible_dropdown__{{each_user_response.id}}">
+                                                    {% if mystery.action_status == 'Action Required' %} 
+                                                    <i class="fas fa-exclamation-circle text-danger accordion-toggle" data-toggle="collapse" data-target="#profile_{{mystery.id}}"></i> 
+                                                    {% elif mystery.action_status == 'Action Taken' %} 
+                                                    <i class="fas fa-exclamation-circle text-success accordion-toggle" data-toggle="collapse" data-target="#profile_{{mystery.id}}"></i> 
+                                                    {% endif %}
                                                     {{each_user_response.staff.user.first_name|default_if_none:'' }} {{each_user_response.staff.user.last_name|default_if_none:'' }}
                                                 </span>
                                             </td>
@@ -142,11 +144,11 @@
                 </table>
             </div>
         </div>
-        {% if not mystery_shopping.auditor_action_reviewed %}
+        <!-- {% if not mystery_shopping.auditor_action_reviewed %}
         <div class="row justify-content-center">
             <button class="btn btn-success" type="button" onclick="edit_all_data()">Update</button>
         </div>
-        {% endif %}
+        {% endif %} -->
     </div>
 </div>
 

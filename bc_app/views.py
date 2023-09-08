@@ -764,6 +764,8 @@ def save_selected_user_responsible(request):
                     compliance_category_percentage=compliance_percentage,
                     remark=get_remark
                 )
+                person_resp_query.mystery_checklist.audit_status = 'Completed'
+                person_resp_query.mystery_checklist.save()
         elif status == 'Old' or status == 'Old-New':
             try:
                 person_resp_query = MysteryChecklistPersonResponsible.objects.get(
@@ -798,7 +800,16 @@ def delete_user_response(request):
                     id=int(user_resp_id))
             except Exception:
                 user_resp_query = None
+            try:
+                all_user_resp_query = MysteryChecklistPersonResponsible.objects.filter(
+                    mystery_checklist=user_resp_query.mystery_checklist)
+            except Exception:
+                all_user_resp_query = None
+            if len(all_user_resp_query) == 1:
+                user_resp_query.mystery_checklist.audit_status = 'Pending'
+                user_resp_query.mystery_checklist.save()
             user_resp_query.delete()
+
             return JsonResponse({"msg": "success"})
         else:
             return JsonResponse({"msg": "failed"})

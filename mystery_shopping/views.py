@@ -8,6 +8,7 @@ from datetime import date, timedelta, datetime
 from .models import MysteryShoppingOverview, MysteryShoppingDetail, MysteryShoppingImages, MonthAudit, MysteryChecklistPersonResponsible
 from bc_app.models import UserProfile, ZenotiEmployeesData, ZenotiCentersData, ExtendedZenotiCenterData, ExtendedZenotiEmployeesData, ExtendedZenotiEmployeesLeaveData, UserTypes, MonthAudit, AuditAccess, AuditTypes, CentralAccess
 from bc_app.views import sanitize_name
+from bc_app.models import SlrSalonImages
 from .forms import MysteryShoppingForm
 from django.core.paginator import Paginator, EmptyPage
 from django.db.models import Q, Count
@@ -17,7 +18,6 @@ import json
 import csv
 from django.http import JsonResponse
 from django.core import serializers
-
 # for email
 from django.core.mail import send_mail, EmailMultiAlternatives
 from django.utils.html import strip_tags
@@ -251,7 +251,6 @@ def mystery_shopping_overview(request):
     current_time = datetime.now().time()
     user = request.user
     staffProfile = UserProfile.objects.get(user=user)
-    mystery_form = MysteryShoppingForm(request.POST or None)
     all_months = MonthAudit.objects.all()
     selected_center_ids = request.GET.getlist('select_center')
     searched_from_id = request.GET.get('searched_from_id')
@@ -297,10 +296,16 @@ def mystery_shopping_overview(request):
     if not this_user_type:
         this_user_type = access_detail[0][0]
     this_location = access_detail_kv[this_user_type]
+    print('this', this_location)
     all_mystery = MysteryShoppingOverview.objects.none()
+    mystery_form = MysteryShoppingForm(request.POST or None)
+    mystery_form.fields['center'].queryset = this_location
     print('user', this_user_type == 'Audit Re')
     if this_user_type == 'Audit Admin':
         all_mystery = all_mystery_master
+        if selected_center_ids:
+            all_center = all_center.filter(id__in=selected_center_ids)
+            all_mystery = all_mystery_master.filter(center__in=all_center)
     if this_user_type == 'Audit Reviewer':
         if not selected_center_ids:
             all_center = this_location
@@ -330,6 +335,8 @@ def mystery_shopping_overview(request):
         mystery_shopping__in=all_mystery)
     all_mystery_image = MysteryShoppingImages.objects.filter(
         mystery_shopping__in=all_mystery)
+    all_user_responsible = MysteryChecklistPersonResponsible.objects.filter(
+        mystery_checklist__in=all_mystery_detail)
 
     unique_kra_fieled = MysteryShoppingDetail.objects.order_by(
     ).values_list('kra', flat=True).distinct()
@@ -347,16 +354,18 @@ def mystery_shopping_overview(request):
             mystery_shopping__in=all_mystery)
         all_mystery_image = all_mystery_image.filter(
             mystery_shopping__in=all_mystery)
+        all_user_responsible = all_user_responsible.filter(
+            mystery_checklist__in=all_mystery_detail)
 
     if select_audit_status:
         if 'All' in select_audit_status:
             all_mystery_detail = MysteryShoppingDetail.objects.filter(mystery_shopping__in=all_mystery,
-                                                                      audit_status__in=['Completed',
-                                                                                        'Action Required', 'Action Taken', 'Pending']
-                                                                      )
+                                                                      audit_status__in=['Completed', 'Pending'])
         else:
             all_mystery_detail = MysteryShoppingDetail.objects.filter(mystery_shopping__in=all_mystery,
                                                                       audit_status__in=select_audit_status)
+        all_user_responsible = all_user_responsible.filter(
+            mystery_checklist__in=all_mystery_detail)
 
     if selected_month:
         # print('month', selected_month)
@@ -366,43 +375,78 @@ def mystery_shopping_overview(request):
             mystery_shopping__in=all_mystery)
         all_mystery_image = all_mystery_image.filter(
             mystery_shopping__in=all_mystery)
+        all_user_responsible = all_user_responsible.filter(
+            mystery_checklist__in=all_mystery_detail)
 
     if searched_compliance:
-        all_mystery_detail = all_mystery_detail.filter(
+        all_user_responsible = all_user_responsible.filter(
             compliance_category__in=searched_compliance)
+        compliance_filtered_user_resp_ids = all_user_responsible.values(
+            'mystery_checklist__id')
+        all_mystery_detail = all_mystery_detail.filter(
+            id__in=compliance_filtered_user_resp_ids)
 
     if searched_kra:
         all_mystery_detail = all_mystery_detail.filter(
             kra__in=searched_kra)
+        all_user_responsible = all_user_responsible.filter(
+            mystery_checklist__in=all_mystery_detail)
 
     if searched_om:
+        all_user_responsible = all_user_responsible.filter(
+            status_by_om=searched_om)
+        om_filtered_user_resp_ids = all_user_responsible.values(
+            'mystery_checklist__id')
         all_mystery_detail = all_mystery_detail.filter(
-            status_by_om=searched_om
+            id__in=om_filtered_user_resp_ids
         )
     if searched_dept:
+        all_user_responsible = all_user_responsible.filter(
+            status_by_department=searched_dept)
+        dept_filtered_user_resp_ids = all_user_responsible.values(
+            'mystery_checklist__id')
         all_mystery_detail = all_mystery_detail.filter(
-            status_by_department=searched_dept
+            id__in=dept_filtered_user_resp_ids
         )
     if searched_action_by_management:
+        all_user_responsible = all_user_responsible.filter(
+            action_taken_by_management__in=searched_action_by_management)
+        action_by_management_filtered_user_resp_ids = all_user_responsible.values(
+            'mystery_checklist__id')
         all_mystery_detail = all_mystery_detail.filter(
-            action_taken_by_management__in=searched_action_by_management
+            id__in=action_by_management_filtered_user_resp_ids
         )
     if searched_personal_intervene:
+        all_user_responsible = all_user_responsible.filter(
+            expected_dept_intervene__in=searched_personal_intervene)
+        personal_intervene_filtered_user_resp_ids = all_user_responsible.values(
+            'mystery_checklist__id')
         all_mystery_detail = all_mystery_detail.filter(
-            expected_dept_intervene__in=searched_personal_intervene
+            id__in=personal_intervene_filtered_user_resp_ids
         )
     if searched_management_remark:
+        all_user_responsible = all_user_responsible.filter(
+            remark_by_management__icontains=searched_management_remark)
+        management_remark_filtered_user_resp_ids = all_user_responsible.values(
+            'mystery_checklist__id')
         all_mystery_detail = all_mystery_detail.filter(
-            remark_by_management__icontains=searched_management_remark
+            id__in=management_remark_filtered_user_resp_ids
         )
     if search_imp_checklist:
         if search_imp_checklist == 'Important':
-            all_mystery_detail = all_mystery_detail.filter(
+            all_user_responsible = all_user_responsible.filter(
                 is_important=True)
-        if search_imp_checklist == 'Not Important':
+            imp_checklist_filtered_user_resp_ids = all_user_responsible.values(
+                'mystery_checklist__id')
             all_mystery_detail = all_mystery_detail.filter(
+                id__in=imp_checklist_filtered_user_resp_ids)
+        if search_imp_checklist == 'Not Important':
+            all_user_responsible = all_user_responsible.filter(
                 is_important=False)
-
+            imp_checklist_filtered_user_resp_ids = all_user_responsible.values(
+                'mystery_checklist__id')
+            all_mystery_detail = all_mystery_detail.filter(
+                id__in=imp_checklist_filtered_user_resp_ids)
     page = Paginator(all_mystery, 20)
     list_page_num = request.GET.get('page', 1)
     try:
@@ -420,11 +464,13 @@ def mystery_shopping_overview(request):
             audit_status='Completed')
         total_pending = all_not_blank_question.filter(
             audit_status='Pending')
-        total_action_required = all_not_blank_question.filter(
-            audit_status='Action Required')
-        total_action_taken = all_not_blank_question.filter(
-            audit_status='Action Taken')
-        not_rnr = all_not_blank_question.filter(
+        all_person_resp = MysteryChecklistPersonResponsible.objects.filter(
+            mystery_checklist__mystery_shopping=overview)
+        total_action_required = all_person_resp.filter(
+            action_status='Action Required')
+        total_action_taken = all_person_resp.filter(
+            action_status='Action Taken')
+        not_rnr = all_person_resp.filter(
             Q(compliance_category_percentage='0') | Q(compliance_category_percentage='50'))
         om_actioned = not_rnr.filter(action_taken_by_outlet_manager__isnull=False,
                                      status_by_om__isnull=False, remark_by_om__isnull=False).exclude(action_taken_by_outlet_manager='').exclude(status_by_om='').exclude(remark_by_om='')
@@ -483,12 +529,200 @@ def mystery_shopping_overview(request):
     page_2 = Paginator(all_mystery_detail, 50)
     detail_page_num = request.GET.get('page_2', 1)
     try:
-        detail_page = page_2.page(detail_page_num)
+        detail_page_query = page_2.page(detail_page_num)
     except EmptyPage:
-        detail_page = page_2.page(1)
+        detail_page_query = page_2.page(1)
     detail_start_index = (int(detail_page_num) - 1) * page_2.per_page + 1
     detail_end_index = min(detail_start_index +
                            page_2.per_page - 1, page_2.count)
+    detail_page = []
+    for each_detail in detail_page_query:
+        this_detail_person_responsible = MysteryChecklistPersonResponsible.objects.filter(
+            mystery_checklist=each_detail)
+        if this_detail_person_responsible:
+            for each_person_responsible in this_detail_person_responsible:
+                temp = {}
+                temp['user_resp_id'] = each_person_responsible.id
+                temp['center'] = str(
+                    each_person_responsible.mystery_checklist.mystery_shopping.center.zenoti_data.name)
+                temp['month_of_audit'] = str(
+                    each_person_responsible.mystery_checklist.mystery_shopping.month_of_audit.month)
+                temp['audit_by'] = str(
+                    each_person_responsible.mystery_checklist.mystery_shopping.shopper_name)
+                temp['date'] = str(
+                    each_person_responsible.mystery_checklist.mystery_shopping.date)
+                temp['start_time'] = str(
+                    each_person_responsible.mystery_checklist.mystery_shopping.start_time)
+                temp['end_time'] = str(
+                    each_person_responsible.mystery_checklist.mystery_shopping.end_time)
+                temp['client_journey'] = str(
+                    each_person_responsible.mystery_checklist.client_journey)
+                temp['kra'] = str(
+                    each_person_responsible.mystery_checklist.kra)
+                temp['process'] = str(
+                    each_person_responsible.mystery_checklist.process)
+                temp['service_number'] = str(
+                    each_person_responsible.mystery_checklist.service_number)
+                try:
+                    temp['service_availed_1'] = each_person_responsible.mystery_checklist.mystery_shopping.service_availed_1
+                except Exception as e:
+                    temp['service_availed_1'] = None
+
+                try:
+                    temp['service_availed_2'] = each_person_responsible.mystery_checklist.mystery_shopping.service_availed_2
+                except Exception as e:
+                    temp['service_availed_2'] = None
+
+                try:
+                    temp['service_availed_3'] = each_person_responsible.mystery_checklist.mystery_shopping.service_availed_3
+                except Exception as e:
+                    temp['service_availed_3'] = None
+
+                try:
+                    temp['is_important'] = each_person_responsible.is_important
+                except Exception as e:
+                    temp['is_important'] = None
+
+                try:
+                    temp['mystery_shopping_id'] = each_person_responsible.mystery_checklist.mystery_shopping.id
+                except Exception as e:
+                    temp['mystery_shopping_id'] = None
+
+                try:
+                    temp['checklist_sequence'] = each_person_responsible.mystery_checklist.sequence
+                except Exception as e:
+                    temp['checklist_sequence'] = None
+
+                try:
+                    temp['checklist'] = each_person_responsible.mystery_checklist.checklist
+                except Exception as e:
+                    temp['checklist'] = None
+
+                try:
+                    temp['user_resp_name'] = (
+                        sanitize_name(each_person_responsible.staff.user.first_name) +
+                        ' ' +
+                        sanitize_name(
+                            each_person_responsible.staff.user.last_name)
+                    )
+                except Exception as e:
+                    temp['user_resp_name'] = None
+
+                try:
+                    temp['compliance_dropdown'] = each_person_responsible.mystery_checklist.compliance_dropdown
+                except Exception as e:
+                    temp['compliance_dropdown'] = None
+
+                try:
+                    temp['compliance'] = each_person_responsible.compliance
+                except Exception as e:
+                    temp['compliance'] = None
+
+                try:
+                    temp['compliance_category'] = each_person_responsible.compliance_category
+                except Exception as e:
+                    temp['compliance_category'] = None
+
+                try:
+                    temp['compliance_category_percentage'] = each_person_responsible.compliance_category_percentage
+                except Exception as e:
+                    temp['compliance_category_percentage'] = None
+
+                try:
+                    temp['remark'] = each_person_responsible.remark
+                except Exception as e:
+                    temp['remark'] = None
+
+                try:
+                    temp['action_status'] = each_person_responsible.action_status
+                except Exception as e:
+                    temp['action_status'] = None
+
+                try:
+                    temp['comment_for_auditor'] = each_person_responsible.comment_for_auditor
+                except Exception as e:
+                    temp['comment_for_auditor'] = None
+
+                try:
+                    temp['action_taken_by_outlet_manager'] = each_person_responsible.action_taken_by_outlet_manager
+                except Exception as e:
+                    temp['action_taken_by_outlet_manager'] = None
+
+                try:
+                    temp['status_by_om'] = each_person_responsible.status_by_om
+                except Exception as e:
+                    temp['status_by_om'] = None
+
+                try:
+                    temp['remark_by_om'] = each_person_responsible.remark_by_om
+                except Exception as e:
+                    temp['remark_by_om'] = None
+
+                try:
+                    temp['action_taken_by_management'] = each_person_responsible.action_taken_by_management
+                except Exception as e:
+                    temp['action_taken_by_management'] = None
+
+                try:
+                    temp['remark_by_management'] = each_person_responsible.remark_by_management
+                except Exception as e:
+                    temp['remark_by_management'] = None
+
+                try:
+                    temp['expected_dept_intervene'] = each_person_responsible.expected_dept_intervene
+                except Exception as e:
+                    temp['expected_dept_intervene'] = None
+
+                try:
+                    temp['remark_by_department'] = each_person_responsible.remark_by_department
+                except Exception as e:
+                    temp['remark_by_department'] = None
+
+                try:
+                    temp['status_by_department'] = each_person_responsible.status_by_department
+                except Exception as e:
+                    temp['status_by_department'] = None
+                detail_page.append(temp)
+        else:
+            temp = {}
+            temp['user_resp_id'] = None
+            temp['center'] = str(
+                each_detail.mystery_shopping.center.zenoti_data.name)
+            temp['month_of_audit'] = str(
+                each_detail.mystery_shopping.month_of_audit.month)
+            temp['audit_by'] = str(each_detail.mystery_shopping.shopper_name)
+            temp['date'] = str(each_detail.mystery_shopping.date)
+            temp['start_time'] = str(each_detail.mystery_shopping.start_time)
+            temp['end_time'] = str(each_detail.mystery_shopping.end_time)
+            temp['client_journey'] = str(each_detail.client_journey)
+            temp['kra'] = str(each_detail.kra)
+            temp['process'] = str(each_detail.process)
+            temp['service_number'] = str(each_detail.service_number)
+            temp['service_availed_1'] = each_detail.mystery_shopping.service_availed_1
+            temp['service_availed_2'] = each_detail.mystery_shopping.service_availed_2
+            temp['service_availed_3'] = each_detail.mystery_shopping.service_availed_3
+            temp['is_important'] = None
+            temp['mystery_shopping_id'] = each_detail.mystery_shopping.id
+            temp['checklist_sequence'] = each_detail.sequence
+            temp['checklist'] = each_detail.checklist
+            temp['user_resp_name'] = None
+            temp['compliance_dropdown'] = each_detail.compliance_dropdown
+            temp['compliance'] = None
+            temp['compliance_category'] = None
+            temp['compliance_category_percentage'] = None
+            temp['remark'] = None
+            temp['action_status'] = None
+            temp['comment_for_auditor'] = None
+            temp['action_taken_by_outlet_manager'] = None
+            temp['status_by_om'] = None
+            temp['remark_by_om'] = None
+            temp['action_taken_by_management'] = None
+            temp['remark_by_management'] = None
+            temp['expected_dept_intervene'] = None
+            temp['remark_by_department'] = None
+            temp['status_by_department'] = None
+            detail_page.append(temp)
+
     page_3 = Paginator(all_mystery_image, 20)
     image_page_num = request.GET.get('page_3', 1)
     try:
@@ -504,6 +738,7 @@ def mystery_shopping_overview(request):
         is_project_owner = True
     if this_user_type == 'Auditor':
         is_auditor = True
+    # print('center', selected_center_ids)
     if request.method == 'POST':
         data_json = open("mistery_data.txt", "r")
         mystery_detail_data = json.loads(data_json.read())
@@ -574,10 +809,12 @@ def mystery_shopping_overview(request):
                     )
 
                     if overview['service_number'] in ['1', '2', '3']:
+                        # print(
+                        #     'in', overview['service_number'], service_responsible)
                         MysteryChecklistPersonResponsible.objects.create(
                             mystery_checklist=new_mystery_detail,
                             staff=service_responsible,
-                            service_number=overview['service_number'],
+                            # service_number=overview['service_number'],
                         )
 
         if 'del_mystery' in request.POST:
@@ -869,9 +1106,11 @@ def mystery_shopping_overview(request):
                'is_auditor': is_auditor,
                'is_auditor_reviewer': is_auditor_reviewer,
                'this_user_type': this_user_type,
+               'all_user_responsible': all_user_responsible,
                'mystery_form': mystery_form,
-               'all_center': all_center,
+               'center_corresponding_user_type': this_location,
                'all_mystery_detail': detail_page,
+               'detail_page_query': detail_page_query,
                'all_mystery_image': image_page,
                'selected_center_id': selected_center_ids,
                'list_start_index': list_start_index,
@@ -934,7 +1173,7 @@ def mark_important_chcklist(request):
         got_id = data['data_obj']
         # print(got_query)
         try:
-            checklist_query = MysteryShoppingDetail.objects.get(
+            checklist_query = MysteryChecklistPersonResponsible.objects.get(
                 id=int(got_id))
         except Exception:
             checklist_query = None
@@ -963,15 +1202,21 @@ def mystery_shopping_detail(request, pk):
     all_employee = ExtendedZenotiEmployeesData.objects.filter(
         associated_center=mystery_shopping.center)
     all_mystery_detail = MysteryShoppingDetail.objects.filter(
-        ~Q(kra='Service Agent'), mystery_shopping=mystery_shopping,)
-    all_user_responsible = MysteryChecklistPersonResponsible.objects.filter(
+        ~Q(kra='Service Agent'), mystery_shopping=mystery_shopping)
+    all_user_responsible_profile = MysteryChecklistPersonResponsible.objects.filter(
         mystery_checklist__in=all_mystery_detail)
     all_service_agent_mystery_detail_1 = MysteryShoppingDetail.objects.filter(
         mystery_shopping=mystery_shopping, kra='Service Agent', service_number='1')
+    all_user_responsible_s1 = MysteryChecklistPersonResponsible.objects.filter(
+        mystery_checklist__in=all_service_agent_mystery_detail_1)
     all_service_agent_mystery_detail_2 = MysteryShoppingDetail.objects.filter(
         mystery_shopping=mystery_shopping, kra='Service Agent', service_number='2')
+    all_user_responsible_s2 = MysteryChecklistPersonResponsible.objects.filter(
+        mystery_checklist__in=all_service_agent_mystery_detail_2)
     all_service_agent_mystery_detail_3 = MysteryShoppingDetail.objects.filter(
         mystery_shopping=mystery_shopping, kra='Service Agent', service_number='3')
+    all_user_responsible_s3 = MysteryChecklistPersonResponsible.objects.filter(
+        mystery_checklist__in=all_service_agent_mystery_detail_3)
     # all_therapy_emp = ZenotiEmployeesData.objects.filter(job_info='Therapist')
     # all_therapy_ext_emp = ExtendedZenotiEmployeesData.objects.all()
     all_users_query = UserProfile.objects.all().exclude(is_super_admin=True)
@@ -989,8 +1234,6 @@ def mystery_shopping_detail(request, pk):
             image = request.FILES["selected_img"]
             MysteryShoppingImages.objects.create(
                 mystery_shopping=mystery_shopping,
-                center=mystery_shopping.center,
-                date=mystery_shopping.date,
                 description=description,
                 image=image
             )
@@ -1015,16 +1258,17 @@ def mystery_shopping_detail(request, pk):
         return redirect('mystery_shopping_detail', pk=pk)
     context = {'all_mystery_detail': all_mystery_detail,
                'staffProfile': staffProfile,
-               'all_user_responsible': all_user_responsible,
+               'all_user_responsible_profile': all_user_responsible_profile,
                'all_employee': all_employee,
                'total_length': all_mystery_detail.count(),
                'total_service_agent_length': all_service_agent_mystery_detail_1.count(),
                'mystery_shopping': mystery_shopping,
-               'all_service_agent_mystery_detail_1': all_service_agent_mystery_detail_1,
-               'all_service_agent_mystery_detail_2': all_service_agent_mystery_detail_2,
-               'all_service_agent_mystery_detail_3': all_service_agent_mystery_detail_3,
+               'all_service_agent_mystery_detail_1': all_user_responsible_s1,
+               'all_service_agent_mystery_detail_2': all_user_responsible_s2,
+               'all_service_agent_mystery_detail_3': all_user_responsible_s3,
                'all_images_list': all_images_list,
-               'all_therapy_ext_emp': all_therapy_ext_emp}
+               'all_therapy_ext_emp': all_therapy_ext_emp,
+               'audit_type': 'Mystery Shopping'}
     return render(request, "mystery_shopping/mystery_shopping_profile.html", context)
 
 
@@ -1113,33 +1357,33 @@ def edit_mystery_shopping_profile(request):
         print('get_query', got_query)
         if got_query:
             for query in got_query:
-                mystery_shopping_detail = MysteryShoppingDetail.objects.get(
+                mystery_shopping_detail = MysteryChecklistPersonResponsible.objects.get(
                     id=int(query['id']))
-                # try:
-                #     employee = UserProfile.objects.filter(
-                #         id__in=query['staff'])
-                # except Exception:
-                #     employee = None
-                # compliance_value = query['compliance']
-                # mystery_shopping_detail.compliance = query['compliance']
+                try:
+                    employee = UserProfile.objects.get(id=query['staff'])
+                except Exception:
+                    employee = None
+                compliance_value = query['compliance']
+                mystery_shopping_detail.compliance = query['compliance']
                 mystery_shopping_detail.remark = query['remark']
-                # mystery_shopping_detail.staff.set(employee)
-                # try:
-                #     mystery_shopping_detail.compliance_category = compliance_category_value[
-                #         compliance_value]
-                # except Exception:
-                #     mystery_shopping_detail.compliance_category = ''
-                # try:
-                #     mystery_shopping_detail.compliance_category_percentage = compliance_category_percentage[compliance_category_value[
-                #         compliance_value]]
-                # except Exception:
-                #     mystery_shopping_detail.compliance_category_percentage = ''
-                # if query['compliance'] == 'NA':
-                #     mystery_shopping_detail.remark = ''
-                # if (query['compliance'] and employee) or (query['compliance'] == 'NA'):
-                #     mystery_shopping_detail.audit_status = 'Completed'
-                # if (not query['compliance'] or (not query['compliance'] == 'NA' and not employee)):
-                #     mystery_shopping_detail.audit_status = 'Pending'
+                mystery_shopping_detail.staff = employee
+                try:
+                    mystery_shopping_detail.compliance_category = compliance_category_value[
+                        compliance_value]
+                except Exception:
+                    mystery_shopping_detail.compliance_category = ''
+                try:
+                    mystery_shopping_detail.compliance_category_percentage = compliance_category_percentage[compliance_category_value[
+                        compliance_value]]
+                except Exception:
+                    mystery_shopping_detail.compliance_category_percentage = ''
+                if query['compliance'] == 'NA':
+                    mystery_shopping_detail.remark = ''
+                if (query['compliance'] and employee) or (query['compliance'] == 'NA'):
+                    mystery_shopping_detail.mystery_checklist.audit_status = 'Completed'
+                if (not query['compliance'] or (not query['compliance'] == 'NA' and not employee)):
+                    mystery_shopping_detail.mystery_checklist.audit_status = 'Pending'
+                mystery_shopping_detail.mystery_checklist.save()
                 mystery_shopping_detail.save()
                 # print(query)
             return JsonResponse({"msg": "success"})
@@ -1202,9 +1446,10 @@ def edit_mystery_extra_data(request):
         mystery_id = got_query[0]['mystery_id']
         got_value = got_query[0]['mystery_value']
         got_name = got_query[0]['name']
+        staff_name = None
 
         try:
-            mystery_query = MysteryShoppingDetail.objects.get(
+            mystery_query = MysteryChecklistPersonResponsible.objects.get(
                 id=int(mystery_id))
         except Exception:
             mystery_query = None
@@ -1227,20 +1472,24 @@ def edit_mystery_extra_data(request):
                 if got_value == 'NA':
                     mystery_query.remark = ''
                 if (got_value and mystery_query.staff) or (got_value == 'NA'):
-                    mystery_query.audit_status = 'Completed'
+                    mystery_query.mystery_checklist.audit_status = 'Completed'
                 if (not got_value or (not got_value == 'NA' and not mystery_query.staff)):
-                    mystery_query.audit_status = 'Pending'
+                    mystery_query.mystery_checklist.audit_status = 'Pending'
+                mystery_query.mystery_checklist.save()
                 mystery_query.save()
-            if got_name == 'user_responsible':
+
+            if got_name == 'person_responsible':
                 try:
-                    got_staff = ExtendedZenotiEmployeesData.objects.get(
+                    got_staff = UserProfile.objects.get(
                         id=int(got_value))
                 except Exception:
                     got_staff = None
+                staff_name = sanitize_name(
+                    got_staff.user.first_name) + ' ' + sanitize_name(got_staff.user.last_name)
                 mystery_query.staff = got_staff
                 mystery_query.save()
-            if got_name == 'audit_status':
-                mystery_query.audit_status = got_value
+            if got_name == 'action_status':
+                mystery_query.action_status = got_value
                 mystery_query.save()
             if got_name == 'comment_auditor':
                 mystery_query.comment_for_auditor = got_value
@@ -1270,7 +1519,7 @@ def edit_mystery_extra_data(request):
                 mystery_query.status_by_department = got_value
                 mystery_query.save()
             ms_json = serializers.serialize('json', [mystery_query])
-            return JsonResponse({"msg": "success", "mystery_json": json.loads(ms_json)})
+            return JsonResponse({"msg": "success", "mystery_json": json.loads(ms_json), "staff_name": staff_name})
         else:
             return JsonResponse({"msg": "failed"})
     return render(request, "mystery_shopping/mystery_shopping_tabs_page.html")
@@ -1282,18 +1531,26 @@ def edit_mystery_file_description(request):
         # data = json.loads(request.body)
         # got_query = data['data_obj']
         # print(got_query)
-        got_file = request.FILES['file']
+        got_file = request.FILES.get('file')
         file_id = request.POST.get('img_id')
         file_desc = request.POST.get('img_disc')
-
-        try:
-            file_query = MysteryShoppingImages.objects.get(
-                id=int(file_id))
-        except Exception:
-            file_query = None
+        audit_type = request.POST.get('audit_type')
+        if audit_type == 'Mystery Shopping':
+            try:
+                file_query = MysteryShoppingImages.objects.get(
+                    id=int(file_id))
+            except Exception:
+                file_query = None
+        elif audit_type == 'SLR Salon':
+            try:
+                file_query = SlrSalonImages.objects.get(
+                    id=int(file_id))
+            except Exception:
+                file_query = None
         if file_query:
             file_query.description = file_desc
-            file_query.image = got_file
+            if got_file:
+                file_query.image = got_file
             file_query.save()
         return JsonResponse({"msg": "success"})
     else:

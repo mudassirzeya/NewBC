@@ -24,8 +24,7 @@
                 <div class="form-group">
                     <label class="text-muted" for="">Center</label>
                     <select class="" id="select_center_id" name="select_center" multiple="multiple">
-                        <!-- <option value=""></option>  -->
-                            {% for each_center in access_detail.0.1 %}
+                            {% for each_center in center_corresponding_user_type %}
                                 <option {% if each_center.id|stringformat:'s' in selected_center_id %} selected {% endif %} value="{{each_center.id}}">{{each_center.zenoti_data.name}}</option>
                             {% endfor %}
                     </select>
@@ -81,8 +80,8 @@
                         <!-- <option value=""></option> -->
                         <option {% if 'All' in select_audit_status %} selected {% endif %} value="All">All</option>
                         <option {% if 'Completed' in select_audit_status %} selected {% endif %} value="Completed">Completed</option>
-                        <option {% if 'Action Required' in select_audit_status %} selected {% endif %} value="Action Required">Action Required</option>
-                        <option {% if 'Action Taken' in select_audit_status %} selected {% endif %} value="Action Taken">Action Taken</option>
+                        <!-- <option {% if 'Action Required' in select_audit_status %} selected {% endif %} value="Action Required">Action Required</option>
+                        <option {% if 'Action Taken' in select_audit_status %} selected {% endif %} value="Action Taken">Action Taken</option> -->
                         <option {% if 'Pending' in select_audit_status %} selected {% endif %} value="Pending">Pending</option>
                     </select>
                 </div>
@@ -220,7 +219,7 @@
             console.log('1', selected_center)
             var kv = {'value':user_type, 'selected_value':selected_center}
             console.log('2', kv)
-            get_center_of_usertype(kv);
+            // get_center_of_usertype(kv);
     };
 
     function init_custom_dropdown(){

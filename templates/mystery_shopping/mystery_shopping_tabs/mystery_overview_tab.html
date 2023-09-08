@@ -352,7 +352,7 @@
                                 <!-- {{mystery_form.center}} -->
                                 <select class="form-control" name="edit_center" id="edit_center" required>
                                     <option value="">Select Center</option> 
-                                    {% for center in all_center %} 
+                                    {% for center in center_corresponding_user_type %} 
                                     <option value="{{center.id}}">{{center}}</option> 
                                     {% endfor %}
                                 </select>

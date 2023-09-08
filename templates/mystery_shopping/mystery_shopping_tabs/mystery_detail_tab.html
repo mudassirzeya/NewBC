@@ -119,28 +119,28 @@
 <div class="row p-4">
     <div class="table-responsive" id="table-container" style="height: 100%">
         <div> 
-            {% if all_mystery_detail.paginator.num_pages > 1 %} 
+            {% if detail_page_query.paginator.num_pages > 1 %} 
             <!-- Paginator -->
             <nav aria-label="Page navigation example">
                 <ul class="pagination justify-content-center">
-                    <li class="page-item {% if not all_mystery_detail.has_previous %} disabled {% endif %}">
+                    <li class="page-item {% if not detail_page_query.has_previous %} disabled {% endif %}">
                         <a class="page-link" href="?page_2=1{% for key, values in request.GET.lists %}{% if key != 'page_2' %}{% for value in values %}&{{ key }}={{ value }}{% endfor %}{% endif %}{% endfor %}" tabindex="-1">FIRST</a>
                     </li>
-                    <li class="page-item {% if not all_mystery_detail.has_previous %} disabled {% endif %}">
-                        <a class="page-link" href="{% if all_mystery_detail.has_previous %}?page_2={{ all_mystery_detail.previous_page_number }}{% for key, values in request.GET.lists %}{% if key != 'page_2' %}{% for value in values %}&{{ key }}={{ value }}{% endfor %}{% endif %}{% endfor %} {% endif %}" tabindex="-1"> &laquo;</a>
-                    </li> {% if all_mystery_detail.number|add:'-4' > 1 %} <li class="page-item disabled">
-                        <a class="page-link" href="?page_2={{ all_mystery_detail.number|add:'-5' }}{% for key, values in request.GET.lists %}{% if key != 'page_2' %}{% for value in values %}&{{ key }}={{ value }}{% endfor %}{% endif %}{% endfor %}">&hellip;</a>
-                    </li> {% endif %} {% for i in all_mystery_detail.paginator.page_range %} {% if all_mystery_detail.number == i %} <li class="active page-item current">
+                    <li class="page-item {% if not detail_page_query.has_previous %} disabled {% endif %}">
+                        <a class="page-link" href="{% if detail_page_query.has_previous %}?page_2={{ detail_page_query.previous_page_number }}{% for key, values in request.GET.lists %}{% if key != 'page_2' %}{% for value in values %}&{{ key }}={{ value }}{% endfor %}{% endif %}{% endfor %} {% endif %}" tabindex="-1"> &laquo;</a>
+                    </li> {% if detail_page_query.number|add:'-4' > 1 %} <li class="page-item disabled">
+                        <a class="page-link" href="?page_2={{ detail_page_query.number|add:'-5' }}{% for key, values in request.GET.lists %}{% if key != 'page_2' %}{% for value in values %}&{{ key }}={{ value }}{% endfor %}{% endif %}{% endfor %}">&hellip;</a>
+                    </li> {% endif %} {% for i in detail_page_query.paginator.page_range %} {% if detail_page_query.number == i %} <li class="active page-item current">
                         <a class="page-link" href="?page_2={{ i }}{% for key, values in request.GET.lists %}{% if key != 'page_2' %}{% for value in values %}&{{ key }}={{ value }}{% endfor %}{% endif %}{% endfor %}">{{ i }}</a>
-                    </li> {% elif i > all_mystery_detail.number|add:'-5' and i < all_mystery_detail.number|add:'5' %} <li class="page-item">
+                    </li> {% elif i > detail_page_query.number|add:'-5' and i < detail_page_query.number|add:'5' %} <li class="page-item">
                         <a class="page-link" href="?page_2={{ i }}{% for key, values in request.GET.lists %}{% if key != 'page_2' %}{% for value in values %}&{{ key }}={{ value }}{% endfor %}{% endif %}{% endfor %}">{{ i }}</a>
-                        </li> {% endif %} {% endfor %} {% if all_mystery_detail.paginator.num_pages > all_mystery_detail.number|add:'4' %} <li class="page-item disabled">
-                            <a class="page-link" href="?page_2={{ all_mystery_detail.number|add:'5' }}{% for key, values in request.GET.lists %}{% if key != 'page_2' %}{% for value in values %}&{{ key }}={{ value }}{% endfor %}{% endif %}{% endfor %}">&hellip;</a>
-                        </li> {% endif %} <li class="page-item {% if not all_mystery_detail.has_next %} disabled {% endif %}">
-                            <a class="page-link" href="{% if all_mystery_detail.has_next %} ?page_2={{ all_mystery_detail.next_page_number }}{% for key, values in request.GET.lists %}{% if key != 'page_2' %}{% for value in values %}&{{ key }}={{ value }}{% endfor %}{% endif %}{% endfor %} {% endif %}">&raquo;</a>
+                        </li> {% endif %} {% endfor %} {% if detail_page_query.paginator.num_pages > detail_page_query.number|add:'4' %} <li class="page-item disabled">
+                            <a class="page-link" href="?page_2={{ detail_page_query.number|add:'5' }}{% for key, values in request.GET.lists %}{% if key != 'page_2' %}{% for value in values %}&{{ key }}={{ value }}{% endfor %}{% endif %}{% endfor %}">&hellip;</a>
+                        </li> {% endif %} <li class="page-item {% if not detail_page_query.has_next %} disabled {% endif %}">
+                            <a class="page-link" href="{% if detail_page_query.has_next %} ?page_2={{ detail_page_query.next_page_number }}{% for key, values in request.GET.lists %}{% if key != 'page_2' %}{% for value in values %}&{{ key }}={{ value }}{% endfor %}{% endif %}{% endfor %} {% endif %}">&raquo;</a>
                         </li>
-                        <li class="page-item {% if not all_mystery_detail.has_next %} disabled {% endif %}">
-                            <a class="page-link" href="{% if all_mystery_detail.has_next %} ?page_2={{ all_mystery_detail.paginator.num_pages }}{% for key, values in request.GET.lists %}{% if key != 'page_2' %}{% for value in values %}&{{ key }}={{ value }}{% endfor %}{% endif %}{% endfor %} {% endif %}">LAST</a>
+                        <li class="page-item {% if not detail_page_query.has_next %} disabled {% endif %}">
+                            <a class="page-link" href="{% if detail_page_query.has_next %} ?page_2={{ detail_page_query.paginator.num_pages }}{% for key, values in request.GET.lists %}{% if key != 'page_2' %}{% for value in values %}&{{ key }}={{ value }}{% endfor %}{% endif %}{% endfor %} {% endif %}">LAST</a>
                         </li>
                 </ul>
             </nav> 
@@ -156,7 +156,7 @@
                     {% endif %}
                     <th id="col4" style="min-width: 150px"> Detail </th>
                     <th id="col5" style="min-width: 250px"> Checklist </th>
-                    <th id="col6" style="min-width: 200px">Person Responsible</th>
+                    <th id="col6" style="min-width: 250px">Person Responsible</th>
                     <th id="col7" style="min-width: 150px">Compliance</th>
                     <th id="col8" style="min-width: 200px"> Auditor Remarks </th>
                     <!-- <th style="min-width: 100px"> Status</th> -->
@@ -177,233 +177,222 @@
                 </tr>
             </thead>
             <tbody> 
-                {% for mystery in all_mystery_detail %} 
+                {% for each_detail in all_mystery_detail %} 
                 <tr>
                     <td class="col1" style="white-space: normal;">
                         <span class="text-muted">
-                            {{mystery.center|default_if_none:'' }} <br>
-                            {{mystery.month_of_audit.month|default_if_none:'' }} 
+                            {{each_detail.center|default_if_none:'' }} <br>
+                            {{each_detail.month_of_audit|default_if_none:'' }} 
                         </span>
                     </td>
                     {% if not is_project_owner %}
                     <td class="col2" style="white-space: normal;">
                         <span class="text-muted"> 
-                            {{mystery.mystery_shopping.shopper_name|default_if_none:''}} 
+                            {{each_detail.shopper_name|default_if_none:''}} 
                         </span>
                     </td>
                     <td class="col3" style="white-space: normal;">
                         <span class="text-muted">
-                            {{mystery.date}} <br>
-                            {{mystery.mystery_shopping.start_time}} - {{mystery.mystery_shopping.end_time}}
+                            {{each_detail.date}} <br>
+                            {{each_detail.start_time}} - {{each_detail.end_time}}
                         </span>
                     </td>
                     {% endif %}
                     <td class="col4" style="white-space: normal;">
                         <span class="text-muted">
-                            {{mystery.client_journey|default_if_none:'' }} - {{mystery.kra|default_if_none:'' }} <br>
-                            {{mystery.process|default_if_none:'' }} <br>
-                            {% if mystery.service_number == '1' %}
-                                <span class="badge badge-info">{{mystery.service_availed_1|default_if_none:''}}</span>
-                            {% elif mystery.service_number == '2' %}
-                            <span class="badge badge-info">{{mystery.service_availed_2|default_if_none:''}}</span>
-                            {% elif mystery.service_number == '3' %}
-                            <span class="badge badge-info">{{mystery.service_availed_3|default_if_none:''}}</span>
+                            {{each_detail.client_journey|default_if_none:'' }} - {{each_detail.kra|default_if_none:'' }} <br>
+                            {{each_detail.process|default_if_none:'' }} <br>
+                            {% if each_detail.service_number == '1' %}
+                                <span class="badge badge-info">{{each_detail.service_availed_1|default_if_none:''}}</span>
+                            {% elif each_detail.service_number == '2' %}
+                                <span class="badge badge-info">{{each_detail.service_availed_2|default_if_none:''}}</span>
+                            {% elif each_detail.service_number == '3' %}
+                                <span class="badge badge-info">{{each_detail.service_availed_3|default_if_none:''}}</span>
                             {% else %}
-                                <span class="badge badge-info">{{mystery.service_availed_1|default_if_none:''}}</span> {% if mystery.service_availed_2 %} <br> {% endif %}
-                                <span class="badge badge-info">{{mystery.service_availed_2|default_if_none:''}}</span> {% if mystery.service_availed_3 %} <br> {% endif %}
-                                <span class="badge badge-info">{{mystery.service_availed_3|default_if_none:''}}</span>
+                                <span class="badge badge-info">{{each_detail.service_availed_1|default_if_none:''}}</span> 
+                                {% if each_detail.service_availed_2 %} <br> {% endif %}
+                                <span class="badge badge-info">{{each_detail.service_availed_2|default_if_none:''}}</span> 
+                                {% if each_detail.service_availed_3 %} <br> {% endif %}
+                                <span class="badge badge-info">{{each_detail.service_availed_3|default_if_none:''}}</span>
                             {% endif %}
                         </span>
                     </td>
                     <td class="col5" style="white-space: normal;">
-                        <i class="{% if mystery.is_important %} fas {% else %} far {% endif %} fa-star text-info" id="important_checklist_{{mystery.id}}" 
-                        onclick="mark_checklist_important('{{mystery.id}}')"></i>
-                        <span class="text-muted" style="white-space: pre-wrap;"><b>{{mystery.mystery_shopping.id}} - {{mystery.sequence}}</b><br>{{mystery.checklist|default_if_none:'' }}</span>
+                        {% if each_detail.user_resp_id %}
+                        <i class="{% if each_detail.is_important %} fas {% else %} far {% endif %} fa-star text-info" id="important_checklist_{{each_detail.user_resp_id}}" onclick="mark_checklist_important('{{each_detail.user_resp_id}}')"></i>
+                        {% endif %}
+                        <span class="text-muted" style="white-space: pre-wrap;"><b>{{each_detail.mystery_shopping_id}} - {{each_detail.checklist_sequence}}</b><br>{{each_detail.checklist|default_if_none:'' }}</span>
                     </td>
                     <td class="col6" style="white-space: normal;">
-                        <div class="row">
-                            <div class="col">
-                                <span id="person_responsible_dropdown_{{mystery.id}}">
-                                    {% if mystery.staff.all|length > 2 %}
-                                        <span class="text-muted" data-toggle="tooltip" title="{% for each_staff in mystery.staff.all  %} {{each_staff.user.first_name|default_if_none:'' }} {{each_staff.user.last_name|default_if_none:'' }} {% if not forloop.last %},{% endif %}
-                                        {% endfor %}">{{ mystery.staff.all|length }} Selected</span> 
-                                    {% else %}
-                                        {% for each_staff in mystery.staff.all  %}
-                                        {{each_staff.user.first_name|default_if_none:'' }} {{each_staff.user.last_name|default_if_none:'' }}
-                                        {% if not forloop.last %},{% endif %}
-                                        {% endfor %}
-                                    {% endif %}
-                                </span>
-                            </div>
-                            <div class="col">
-                                {% if not mystery.compliance == 'NA' %}
-                                <div class="">
-                                    <button class="btn btn-link responsible_person_edit_btn" id="edit_person_responsible_btn_{{mystery.id}}" onclick="get_user_list_and_make_userresposible_dropdown(this)"><i class="fas fa-edit"></i></button>
-                                    <button class="btn btn-link d-none" id="save_person_responsible_btn_{{mystery.id}}" onclick="save_user_list_and_remove_userresposible_dropdown(this)"><i class="fas fa-check"></i></button>
-                                </div>
-                                {% endif %}
-                            </div>
-                        </div>
-                        
+                        {% if each_detail.user_resp_id %}
+                        <table class="table">
+                            <tbody>
+                                <tr>
+                                    <td style="width: 80%; white-space: normal;">
+                                        <span id="person_responsible_dropdown_{{each_detail.user_resp_id}}">
+                                            {{each_detail.user_resp_name|default_if_none:'' }}
+                                        </span>
+                                    </td>
+                                    <td style="white-space: normal;">
+                                        {% if not each_detail.compliance == 'NA' %}
+                                            <button class="btn btn-link responsible_person_edit_btn" id="edit_person_responsible_btn_{{each_detail.user_resp_id}}" onclick="get_user_list_and_make_userresposible_dropdown(this)"><i class="fas fa-edit"></i></button>
+                                            <button class="btn btn-link d-none" name="person_responsible" id="save_person_responsible_btn_{{each_detail.user_resp_id}}" onclick="edit_extra_mystery_data(this, '{{each_detail.user_resp_id}}' )"><i class="fas fa-check"></i></button>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                        {% endif %}
                     </td>
                     <td class="col7" style="white-space: normal;">
-                            <select class="form-control p-0 compliance_input" name="atr_complience" id="complience_{{mystery.id}}" onchange="edit_extra_mystery_data(this, '{{mystery.id}}')">
+                        {% if each_detail.user_resp_id %}
+                            <select class="form-control p-0 compliance_input" name="atr_complience" id="complience_{{each_detail.user_resp_id}}" onchange="edit_extra_mystery_data(this, '{{each_detail.user_resp_id}}')">
                                 <option value="">Select</option> 
-                                {% for compliance in mystery.compliance_dropdown|split:"," %} 
-                                <option {% if mystery.compliance == compliance %} selected {% endif %} value="{{compliance}}">{{compliance}}</option> 
+                                {% for compliance in each_detail.compliance_dropdown|split:"," %} 
+                                <option {% if each_detail.compliance == compliance %} selected {% endif %} value="{{compliance}}">{{compliance}}</option> 
                                 {% endfor %}
                             </select>
-                        {% if mystery.compliance_category %} 
-                        <h4>
-                            <span id="ms_compliance_category_{{mystery.id}}" class=" badge mt-2 {% if mystery.compliance_category_percentage == '100' %} badge-success {% elif mystery.compliance_category_percentage == '50' %} badge-warning {% elif mystery.compliance_category_percentage == '0' %} badge-danger {% else %} badge-primary {% endif %} ">
-                                {{mystery.compliance_category|default_if_none:'' }} {% endif %} - {% if mystery.compliance_category_percentage %} {{mystery.compliance_category_percentage|default_if_none:''}}% </span>
-                        </h4>
+                            {% if each_detail.compliance_category %} 
+                                <h4>
+                                    <span id="ms_compliance_category_{{each_detail.user_resp_id}}" class=" badge mt-2 {% if each_detail.compliance_category_percentage == '100' %} badge-success {% elif each_detail.compliance_category_percentage == '50' %} badge-warning {% elif each_detail.compliance_category_percentage == '0' %} badge-danger {% else %} badge-primary {% endif %} ">
+                                        {{each_detail.compliance_category|default_if_none:'' }} {% endif %} - {% if each_detail.compliance_category_percentage %} {{each_detail.compliance_category_percentage|default_if_none:''}}% </span>
+                                </h4>
+                            {% endif %}
                         {% endif %}
                     </td>
                     <td class="col8" style="white-space: normal;">
+                        {% if each_detail.user_resp_id %}
                         <span class="text-muted">
-                            <textarea class="form-control remark_input" name="user_remark" id="remark_{{mystery.id}}" rows="3" onchange="edit_extra_mystery_data(this, '{{mystery.id}}')" {% if mystery.compliance == 'NA' %} disabled {% endif %}>{{mystery.remark|default_if_none:'' }}</textarea>
+                            <textarea class="form-control remark_input" name="user_remark" id="remark_{{each_detail.user_resp_id}}" rows="3" onchange="edit_extra_mystery_data(this, '{{each_detail.user_resp_id}}')" {% if each_detail.compliance == 'NA' %} disabled {% endif %}>{{each_detail.remark|default_if_none:'' }}</textarea>
                         </span>
+                        {% endif %}
                     </td>
-                    <!-- <td>
-                        <span class="text-muted">
-                            <span> Audit: 
-                                <span id="status_audit_{{mystery.id}}" class="badge {% if mystery.audit_status == 'Completed' %} badge-primary {% elif mystery.audit_status == 'Action Required' %} badge-danger {% elif mystery.audit_status == 'Action Taken' %} badge-success {% endif %} ">
-                                    {{mystery.audit_status|default_if_none:''}}
-                                </span>
-                            </span> <br>
-                            <span>
-                                OM: <span id="om_{{mystery.id}}" class="badge badge-info">{{mystery.status_by_om|default_if_none:'' }}</span>
-                            </span>
-                            <br>
-                            <span>
-                                Dept: 
-                                <span id="department_{{mystery.id}}" class="badge badge-info">{{mystery.status_by_department|default_if_none:''}}</span>
-                            </span>
-                        </span>
-                    </td> -->
                     {% if not is_project_owner %}
                     <td class="col9">
+                        {% if each_detail.user_resp_id %}
                         <div class="form-group">
-                            <select class="form-control audit_status_input" name="audit_status" id="audit_status_{{mystery.id}}" onchange="edit_extra_mystery_data(this, '{{mystery.id}}')">
+                            <select class="form-control action_status_input" name="action_status" id="action_status_{{each_detail.user_resp_id}}" onchange="edit_extra_mystery_data(this, '{{each_detail.user_resp_id}}')">
                                 <!-- <option value=""></option> -->
-                                {% if mystery.audit_status == 'Pending' %}
-                                    <option {% if mystery.audit_status == 'Pending' %} selected {% endif %} value="Pending">Pending</option>
-                                    <option {% if mystery.audit_status == 'Action Required' %} selected {% endif %} value="Action Required">Action Required</option>
-                                {% elif mystery.audit_status == 'Completed' %}
-                                    <option {% if mystery.audit_status == 'Completed' %} selected {% endif %} value="Completed">Completed</option>
-                                    <option {% if mystery.audit_status == 'Action Required' %} selected {% endif %} value="Action Required">Action Required</option>
-                                {% elif mystery.audit_status == 'Action Required' %}
-                                    <option {% if mystery.audit_status == 'Action Required' %} selected {% endif %} value="Action Required">Action Required</option>
-                                    <option {% if mystery.audit_status == 'Completed' %} selected {% endif %} value="Completed">Completed</option>
-                                {% elif mystery.audit_status == 'Action Taken' %}
-                                <option {% if mystery.audit_status == 'Action Taken' %} selected {% endif %} value="Action Taken">Action Taken</option>
-                                <option {% if mystery.audit_status == 'Action Required' %} selected {% endif %} value="Action Required">Action Required</option>
-                                <option {% if mystery.audit_status == 'Completed' %} selected {% endif %} value="Completed">Completed</option>
-                                {% else %}
-                                <option {% if mystery.audit_status == 'Action Taken' %} selected {% endif %} value="Action Taken">Action Taken</option>
-                                <option {% if mystery.audit_status == 'Action Required' %} selected {% endif %} value="Action Required">Action Required</option>
-                                <option {% if mystery.audit_status == 'Completed' %} selected {% endif %} value="Completed">Completed</option>
-                                {% endif %}
+                                <option {% if each_detail.action_status == 'Action Taken' %} selected {% endif %} value="Action Taken">Action Taken</option>
+                                <option {% if each_detail.action_status == 'Action Required' %} selected {% endif %} value="Action Required">Action Required</option>
                             </select>
                         </div>
+                        {% endif %}
                     </td>
                     <td class="col10">
+                        {% if each_detail.user_resp_id %}
                         <div class="form-group">
-                            <textarea class="form-control auditor_comment_input" type="text" name="comment_auditor" id="comment_auditor_{{mystery.id}}" rows="3" onchange="edit_extra_mystery_data(this, '{{mystery.id}}')">{{mystery.comment_for_auditor|default_if_none:''}}</textarea>
+                            <textarea class="form-control auditor_comment_input" type="text" name="comment_auditor" id="comment_auditor_{{each_detail.user_resp_id}}" rows="3" onchange="edit_extra_mystery_data(this, '{{each_detail.user_resp_id}}')">{{each_detail.comment_for_auditor|default_if_none:''}}</textarea>
                         </div>
+                        {% endif %}
                     </td>
                     {% endif %}
                     <td class="col11">
-                        {% if mystery.compliance_category_percentage|add:'0' >= 0 and mystery.compliance_category_percentage|add:'0' < 100 %}
+                        {% if each_detail.user_resp_id %}
+                        {% if each_detail.compliance_category_percentage|add:'0' >= 0 and each_detail.compliance_category_percentage|add:'0' < 100 %}
                         <div class="form-group">
-                            <select class="form-control action_taken_by_om_input {% if not mystery.action_taken_by_outlet_manager %}  bg-danger text-white  {% endif %}" name="action_outlet" id="action_outlet_{{mystery.id}}" onchange="edit_extra_mystery_data(this, '{{mystery.id}}')">
+                            <select class="form-control action_taken_by_om_input {% if not each_detail.action_taken_by_outlet_manager %}  bg-danger text-white  {% endif %}" name="action_outlet" id="action_outlet_{{each_detail.user_resp_id}}" onchange="edit_extra_mystery_data(this, '{{each_detail.user_resp_id}}')">
                                 <option value="">Select</option>
-                                <option {% if mystery.action_taken_by_outlet_manager == 'Resource shortage' %} selected {% endif %} value="Resource shortage">Resource shortage</option>
-                                <option {% if mystery.action_taken_by_outlet_manager == 'Facility issue' %} selected {% endif %} value="Facility issue">Facility issue</option>
-                                <option {% if mystery.action_taken_by_outlet_manager == 'Verbal Warning' %} selected {% endif %} value="Verbal Warning">Verbal Warning</option>
-                                <option {% if mystery.action_taken_by_outlet_manager == 'Education' %} selected {% endif %} value="Education">Education</option>
-                                <option {% if mystery.action_taken_by_outlet_manager == 'PIP Connect' %} selected {% endif %} value="PIP Connect">PIP Connect</option>
+                                <option {% if each_detail.action_taken_by_outlet_manager == 'Resource shortage' %} selected {% endif %} value="Resource shortage">Resource shortage</option>
+                                <option {% if each_detail.action_taken_by_outlet_manager == 'Facility issue' %} selected {% endif %} value="Facility issue">Facility issue</option>
+                                <option {% if each_detail.action_taken_by_outlet_manager == 'Verbal Warning' %} selected {% endif %} value="Verbal Warning">Verbal Warning</option>
+                                <option {% if each_detail.action_taken_by_outlet_manager == 'Education' %} selected {% endif %} value="Education">Education</option>
+                                <option {% if each_detail.action_taken_by_outlet_manager == 'PIP Connect' %} selected {% endif %} value="PIP Connect">PIP Connect</option>
                             </select>
                         </div>
+                        {% endif %}
                         {% endif %}
                     </td>
                     <td class="col12">
-                        {% if mystery.compliance_category_percentage|add:'0' >= 0 and mystery.compliance_category_percentage|add:'0' < 100 %}
+                        {% if each_detail.user_resp_id %}
+                        {% if each_detail.compliance_category_percentage|add:'0' >= 0 and each_detail.compliance_category_percentage|add:'0' < 100 %}
                         <div class="form-group">
-                            <select class="form-control status_by_om_input {% if not mystery.status_by_om %}  bg-danger text-white  {% endif %}" name="status_om" id="status_om_{{mystery.id}}" onchange="edit_extra_mystery_data(this, '{{mystery.id}}')">
+                            <select class="form-control status_by_om_input {% if not each_detail.status_by_om %}  bg-danger text-white  {% endif %}" name="status_om" id="status_om_{{each_detail.user_resp_id}}" onchange="edit_extra_mystery_data(this, '{{each_detail.user_resp_id}}')">
                                 <option value="">Select</option>
-                                <option {% if mystery.status_by_om == 'Open' %} selected {% endif %} value="Open">Open</option>
-                                <option {% if mystery.status_by_om == 'Closed' %} selected {% endif %} value="Closed">Closed</option>
+                                <option {% if each_detail.status_by_om == 'Open' %} selected {% endif %} value="Open">Open</option>
+                                <option {% if each_detail.status_by_om == 'Closed' %} selected {% endif %} value="Closed">Closed</option>
                             </select>
                         </div>
                         {% endif %}
+                        {% endif %}
                     </td>
                     <td class="col13">
-                        {% if mystery.compliance_category_percentage|add:'0' >= 0 and mystery.compliance_category_percentage|add:'0' < 100 %}
+                        {% if each_detail.user_resp_id %}
+                        {% if each_detail.compliance_category_percentage|add:'0' >= 0 and each_detail.compliance_category_percentage|add:'0' < 100 %}
                         <div class="form-group">
-                            <textarea class="form-control remark_by_om_input {% if not mystery.remark_by_om %}  bg-danger text-white  {% endif %}" name="remark_om" id="remark_om_{{mystery.id}}" rows="3" onchange="edit_extra_mystery_data(this, '{{mystery.id}}')" >{{mystery.remark_by_om|default_if_none:''}}</textarea>
+                            <textarea class="form-control remark_by_om_input {% if not each_detail.remark_by_om %}  bg-danger text-white  {% endif %}" name="remark_om" id="remark_om_{{each_detail.user_resp_id}}" rows="3" onchange="edit_extra_mystery_data(this, '{{each_detail.user_resp_id}}')" >{{each_detail.remark_by_om|default_if_none:''}}</textarea>
                         </div>
+                        {% endif %}
                         {% endif %}
                     </td>
                     {% if not is_project_owner %}
                     <td class="col14">
+                        {% if each_detail.user_resp_id %}
                         <div class="form-group">
-                            <select class="form-control action_taken_by_management_input" name="action_management" id="action_management_{{mystery.id}}" onchange="edit_extra_mystery_data(this, '{{mystery.id}}')">
+                            <select class="form-control action_taken_by_management_input" name="action_management" id="action_management_{{each_detail.user_resp_id}}" onchange="edit_extra_mystery_data(this, '{{each_detail.user_resp_id}}')">
                                 <option value="">Select</option>
-                                <option {% if mystery.action_taken_by_management == 'Verbal Warning' %} selected {% endif %} value="Verbal Warning"> Verbal Warning </option>
-                                <option {% if mystery.action_taken_by_management == 'Warning Letter' %} selected {% endif %} value="Warning Letter"> Warning Letter </option>
-                                <option {% if mystery.action_taken_by_management == 'Process Improvement' %} selected {% endif %} value="Process Improvement">Process Improvement</option>
-                                <option {% if mystery.action_taken_by_management == 'Non compliance-Incentive deduction' %} selected {% endif %} value="Non compliance-Incentive deduction">Non compliance-Incentive deduction</option>
-                                <option {% if mystery.action_taken_by_management == 'PIP Connect' %} selected {% endif %} value="PIP Connect">PIP Connect</option>
-                                <option {% if mystery.action_taken_by_management == 'Education' %} selected {% endif %} value="Education">Education</option>
+                                <option {% if each_detail.action_taken_by_management == 'Verbal Warning' %} selected {% endif %} value="Verbal Warning"> Verbal Warning </option>
+                                <option {% if each_detail.action_taken_by_management == 'Warning Letter' %} selected {% endif %} value="Warning Letter"> Warning Letter </option>
+                                <option {% if each_detail.action_taken_by_management == 'Process Improvement' %} selected {% endif %} value="Process Improvement">Process Improvement</option>
+                                <option {% if each_detail.action_taken_by_management == 'Non compliance-Incentive deduction' %} selected {% endif %} value="Non compliance-Incentive deduction">Non compliance-Incentive deduction</option>
+                                <option {% if each_detail.action_taken_by_management == 'PIP Connect' %} selected {% endif %} value="PIP Connect">PIP Connect</option>
+                                <option {% if each_detail.action_taken_by_management == 'Education' %} selected {% endif %} value="Education">Education</option>
                             </select>
                         </div>
+                        {% endif %}
                     </td>
                     <td class="col15">
+                        {% if each_detail.user_resp_id %}
                         <div class="form-group">
-                            <textarea class="form-control remark_management_input" name="remark_management" id="remark_management_{{mystery.id}}" onchange="edit_extra_mystery_data(this, '{{mystery.id}}')" rows="3">{{mystery.remark_by_management|default_if_none:''}}</textarea>
+                            <textarea class="form-control remark_management_input" name="remark_management" id="remark_management_{{each_detail.user_resp_id}}" onchange="edit_extra_mystery_data(this, '{{each_detail.user_resp_id}}')" rows="3">{{each_detail.remark_by_management|default_if_none:''}}</textarea>
                         </div>
+                        {% endif %}
                     </td>
                     <td class="col16">
+                        {% if each_detail.user_resp_id %}
                         <div class="form-group">
-                            <select class="form-control expected_intervene_input" name="expected_intervene" id="expected_intervene_{{mystery.id}}" onchange="edit_extra_mystery_data(this, '{{mystery.id}}')">
+                            <select class="form-control expected_intervene_input" name="expected_intervene" id="expected_intervene_{{each_detail.user_resp_id}}" onchange="edit_extra_mystery_data(this, '{{each_detail.user_resp_id}}')">
                                 <option value="">Select</option>
-                                <option {% if mystery.expected_dept_intervene == 'OM' %} selected {% endif %}
+                                <option {% if each_detail.expected_dept_intervene == 'OM' %} selected {% endif %}
                                 value="OM">OM</option>
-                                <option {% if mystery.expected_dept_intervene == 'POC' %} selected {% endif %}
+                                <option {% if each_detail.expected_dept_intervene == 'POC' %} selected {% endif %}
                                 value="POC">POC</option>
-                                <option {% if mystery.expected_dept_intervene == 'TAM' %} selected {% endif %}
+                                <option {% if each_detail.expected_dept_intervene == 'TAM' %} selected {% endif %}
                                 value="TAM">TAM</option>
-                                <option {% if mystery.expected_dept_intervene == 'SLD-Salon' %} selected {% endif %}
+                                <option {% if each_detail.expected_dept_intervene == 'SLD-Salon' %} selected {% endif %}
                                 value="SLD-Salon">SLD-Salon</option>
-                                <option {% if mystery.expected_dept_intervene == 'SLD-Skin' %} selected {% endif %} 
+                                <option {% if each_detail.expected_dept_intervene == 'SLD-Skin' %} selected {% endif %} 
                                 value="SLD-Skin">SLD-Skin</option>
-                                <option {% if mystery.expected_dept_intervene == 'Management' %} selected {% endif %} value="Management">Management</option>
-                                <option {% if mystery.expected_dept_intervene == 'Procurement' %} selected {% endif %} value="Procurement">Procurement</option>
-                                <option {% if mystery.expected_dept_intervene == 'Facility Management' %} selected {% endif %} value="Facility Management">Facility Management</option>
-                                <option {% if mystery.expected_dept_intervene == 'Marketing' %} selected {% endif %} value="Marketing">Marketing</option>
-                                <option {% if mystery.expected_dept_intervene == 'Finance & Accounts' %} selected {% endif %} value="Finance & Accounts">Finance & Accounts</option>
-                                <option {% if mystery.expected_dept_intervene == 'CRM' %} selected {% endif %} value="CRM">
+                                <option {% if each_detail.expected_dept_intervene == 'Management' %} selected {% endif %} value="Management">Management</option>
+                                <option {% if each_detail.expected_dept_intervene == 'Procurement' %} selected {% endif %} value="Procurement">Procurement</option>
+                                <option {% if each_detail.expected_dept_intervene == 'Facility Management' %} selected {% endif %} value="Facility Management">Facility Management</option>
+                                <option {% if each_detail.expected_dept_intervene == 'Marketing' %} selected {% endif %} value="Marketing">Marketing</option>
+                                <option {% if each_detail.expected_dept_intervene == 'Finance & Accounts' %} selected {% endif %} value="Finance & Accounts">Finance & Accounts</option>
+                                <option {% if each_detail.expected_dept_intervene == 'CRM' %} selected {% endif %} value="CRM">
                                     CRM</option>
                             </select>
                         </div>
+                        {% endif %}
                     </td>
                     <td class="col17">
+                        {% if each_detail.user_resp_id %}
                         <div class="form-group">
-                            <textarea class="form-control remark_department_input" name="remark_department" id="remark_department_{{mystery.id}}" onchange="edit_extra_mystery_data(this, '{{mystery.id}}')" rows="3">{{mystery.remark_by_department|default_if_none:''}}</textarea>
+                            <textarea class="form-control remark_department_input" name="remark_department" id="remark_department_{{each_detail.user_resp_id}}" onchange="edit_extra_mystery_data(this, '{{each_detail.user_resp_id}}')" rows="3">{{each_detail.remark_by_department|default_if_none:''}}</textarea>
                         </div>
+                        {% endif %}
                     </td>
                     <td class="col18">
+                        {% if each_detail.user_resp_id %}
                         <div class="form-group">
-                            <select class="form-control status_department_input" name="status_department" id="status_department_{{mystery.id}}" onchange="edit_extra_mystery_data(this, '{{mystery.id}}')">
+                            <select class="form-control status_department_input" name="status_department" id="status_department_{{each_detail.user_resp_id}}" onchange="edit_extra_mystery_data(this, '{{each_detail.user_resp_id}}')">
                                 <option value="">Select</option>
-                                <option {% if mystery.status_by_department == 'Open' %} selected {% endif %} 
+                                <option {% if each_detail.status_by_department == 'Open' %} selected {% endif %} 
                                 value="Open">Open</option>
-                                <option {% if mystery.status_by_department == 'Closed' %} selected {% endif %}
+                                <option {% if each_detail.status_by_department == 'Closed' %} selected {% endif %}
                                 value="Closed">Closed</option>
                             </select>
                         </div>
+                        {% endif %}
                     </td>
                     {% endif %}
                 </tr> 
@@ -412,28 +401,28 @@
         </table>
 
         <div> 
-            {% if all_mystery_detail.paginator.num_pages > 1 %} 
+            {% if detail_page_query.paginator.num_pages > 1 %} 
             <!-- Paginator -->
             <nav aria-label="Page navigation example">
                 <ul class="pagination justify-content-center">
-                    <li class="page-item {% if not all_mystery_detail.has_previous %} disabled {% endif %}">
+                    <li class="page-item {% if not detail_page_query.has_previous %} disabled {% endif %}">
                         <a class="page-link" href="?page_2=1{% for key, values in request.GET.lists %}{% if key != 'page_2' %}{% for value in values %}&{{ key }}={{ value }}{% endfor %}{% endif %}{% endfor %}" tabindex="-1">FIRST</a>
                     </li>
-                    <li class="page-item {% if not all_mystery_detail.has_previous %} disabled {% endif %}">
-                        <a class="page-link" href="{% if all_mystery_detail.has_previous %}?page_2={{ all_mystery_detail.previous_page_number }}{% for key, values in request.GET.lists %}{% if key != 'page_2' %}{% for value in values %}&{{ key }}={{ value }}{% endfor %}{% endif %}{% endfor %} {% endif %}" tabindex="-1"> &laquo;</a>
-                    </li> {% if all_mystery_detail.number|add:'-4' > 1 %} <li class="page-item disabled">
-                        <a class="page-link" href="?page_2={{ all_mystery_detail.number|add:'-5' }}{% for key, values in request.GET.lists %}{% if key != 'page_2' %}{% for value in values %}&{{ key }}={{ value }}{% endfor %}{% endif %}{% endfor %}">&hellip;</a>
-                    </li> {% endif %} {% for i in all_mystery_detail.paginator.page_range %} {% if all_mystery_detail.number == i %} <li class="active page-item current">
+                    <li class="page-item {% if not detail_page_query.has_previous %} disabled {% endif %}">
+                        <a class="page-link" href="{% if detail_page_query.has_previous %}?page_2={{ detail_page_query.previous_page_number }}{% for key, values in request.GET.lists %}{% if key != 'page_2' %}{% for value in values %}&{{ key }}={{ value }}{% endfor %}{% endif %}{% endfor %} {% endif %}" tabindex="-1"> &laquo;</a>
+                    </li> {% if detail_page_query.number|add:'-4' > 1 %} <li class="page-item disabled">
+                        <a class="page-link" href="?page_2={{ detail_page_query.number|add:'-5' }}{% for key, values in request.GET.lists %}{% if key != 'page_2' %}{% for value in values %}&{{ key }}={{ value }}{% endfor %}{% endif %}{% endfor %}">&hellip;</a>
+                    </li> {% endif %} {% for i in detail_page_query.paginator.page_range %} {% if detail_page_query.number == i %} <li class="active page-item current">
                         <a class="page-link" href="?page_2={{ i }}{% for key, values in request.GET.lists %}{% if key != 'page_2' %}{% for value in values %}&{{ key }}={{ value }}{% endfor %}{% endif %}{% endfor %}">{{ i }}</a>
-                    </li> {% elif i > all_mystery_detail.number|add:'-5' and i < all_mystery_detail.number|add:'5' %} <li class="page-item">
+                    </li> {% elif i > detail_page_query.number|add:'-5' and i < detail_page_query.number|add:'5' %} <li class="page-item">
                         <a class="page-link" href="?page_2={{ i }}{% for key, values in request.GET.lists %}{% if key != 'page_2' %}{% for value in values %}&{{ key }}={{ value }}{% endfor %}{% endif %}{% endfor %}">{{ i }}</a>
-                        </li> {% endif %} {% endfor %} {% if all_mystery_detail.paginator.num_pages > all_mystery_detail.number|add:'4' %} <li class="page-item disabled">
-                            <a class="page-link" href="?page_2={{ all_mystery_detail.number|add:'5' }}{% for key, values in request.GET.lists %}{% if key != 'page_2' %}{% for value in values %}&{{ key }}={{ value }}{% endfor %}{% endif %}{% endfor %}">&hellip;</a>
-                        </li> {% endif %} <li class="page-item {% if not all_mystery_detail.has_next %} disabled {% endif %}">
-                            <a class="page-link" href="{% if all_mystery_detail.has_next %} ?page_2={{ all_mystery_detail.next_page_number }}{% for key, values in request.GET.lists %}{% if key != 'page_2' %}{% for value in values %}&{{ key }}={{ value }}{% endfor %}{% endif %}{% endfor %} {% endif %}">&raquo;</a>
+                        </li> {% endif %} {% endfor %} {% if detail_page_query.paginator.num_pages > detail_page_query.number|add:'4' %} <li class="page-item disabled">
+                            <a class="page-link" href="?page_2={{ detail_page_query.number|add:'5' }}{% for key, values in request.GET.lists %}{% if key != 'page_2' %}{% for value in values %}&{{ key }}={{ value }}{% endfor %}{% endif %}{% endfor %}">&hellip;</a>
+                        </li> {% endif %} <li class="page-item {% if not detail_page_query.has_next %} disabled {% endif %}">
+                            <a class="page-link" href="{% if detail_page_query.has_next %} ?page_2={{ detail_page_query.next_page_number }}{% for key, values in request.GET.lists %}{% if key != 'page_2' %}{% for value in values %}&{{ key }}={{ value }}{% endfor %}{% endif %}{% endfor %} {% endif %}">&raquo;</a>
                         </li>
-                        <li class="page-item {% if not all_mystery_detail.has_next %} disabled {% endif %}">
-                            <a class="page-link" href="{% if all_mystery_detail.has_next %} ?page_2={{ all_mystery_detail.paginator.num_pages }}{% for key, values in request.GET.lists %}{% if key != 'page_2' %}{% for value in values %}&{{ key }}={{ value }}{% endfor %}{% endif %}{% endfor %} {% endif %}">LAST</a>
+                        <li class="page-item {% if not detail_page_query.has_next %} disabled {% endif %}">
+                            <a class="page-link" href="{% if detail_page_query.has_next %} ?page_2={{ detail_page_query.paginator.num_pages }}{% for key, values in request.GET.lists %}{% if key != 'page_2' %}{% for value in values %}&{{ key }}={{ value }}{% endfor %}{% endif %}{% endfor %} {% endif %}">LAST</a>
                         </li>
                 </ul>
             </nav> 
@@ -473,7 +462,7 @@
 
 <script>
     $(document).ready(function () {
-        var class_list = ['responsible_person_edit_btn', 'compliance_input', 'remark_input', 'audit_status_input', 'auditor_comment_input', 'action_taken_by_management_input', 'remark_management_input', 'expected_intervene_input', 'remark_department_input', 'status_department_input'];
+        var class_list = ['responsible_person_edit_btn', 'compliance_input', 'remark_input', 'action_status_input', 'auditor_comment_input', 'action_taken_by_management_input', 'remark_management_input', 'expected_intervene_input', 'remark_department_input', 'status_department_input'];
         var is_project_owner = '{{ is_project_owner }}';
         console.log('user', is_project_owner);
         if (is_project_owner == 'True') {
@@ -653,7 +642,12 @@
 
     function edit_extra_mystery_data(t, atr_id) {
         $('#cover-spin').show(0);
-        var got_value = t.value;
+        var got_value = '';
+        if(t.name == 'person_responsible'){
+            got_value = document.getElementById('person_responsible_dropdown_' +atr_id).value;
+        }else{
+            got_value = t.value;
+        }
         var checklist_id = atr_id;
         var value_name = t.name;
         var final_list = [];
@@ -713,6 +707,7 @@
             .then((data) => {
                 var mystery_data = data.mystery_json
                 var final_data = mystery_data[0]['fields'];
+                var selected_user = data.staff_name
                 // console.log("Success: ", data);
                 if (data.msg == 'success') {
                     $('#cover-spin').hide(0);
@@ -728,7 +723,19 @@
 
                     if (value_name == 'atr_complience') {
                         document.getElementById('ms_compliance_category_'+atr_id).innerHTML = final_data['compliance_category']+ " - " +  final_data['compliance_category_percentage']
+                    }
 
+                    if (t.name == 'person_responsible') {
+                        var EditBtn = document.getElementById("edit_person_responsible_btn_" + atr_id);
+                        var saveBtn = document.getElementById("save_person_responsible_btn_" + atr_id);
+                        try {
+                            $('#person_responsible_dropdown_' + atr_id).multiselect('destroy');
+                        } catch (e) { }
+                        var dropdownId = document.getElementById('person_responsible_dropdown_' + atr_id);
+                        EditBtn.classList.remove("d-none");
+                        saveBtn.classList.add("d-none");
+                        var html_1 = `<span id="person_responsible_dropdown_${atr_id}">${selected_user}</span>`;
+                        dropdownId.outerHTML = html_1;
                     }
 
                     // if(value_name == 'status_department'){
@@ -780,14 +787,12 @@
                     if (data.msg == 'success') {
                         $('#cover-spin').hide(0);
                         var dropDownId = 'person_responsible_dropdown_' + ms_id;
-                        // console.log('all_user', all_users, dropDownId, user_list)
                         create_dropdown(dropDownId, dropDownId, all_users, selected_user_list, 'single');
                         var EditBtn = document.getElementById("edit_person_responsible_btn_" + ms_id);
                         var saveBtn = document.getElementById("save_person_responsible_btn_" + ms_id);
                         EditBtn.classList.add("d-none");
                         saveBtn.classList.remove("d-none");
-
-
+                        saveBtn.classList.add("btn-link");
                     }
                     else {
                         $('#cover-spin').hide(0);
@@ -796,70 +801,5 @@
                 });
         }
 
-        function save_user_list_and_remove_userresposible_dropdown(t) {
-            var ms_id_split = t.id.split('_');
-            var ms_id = ms_id_split.pop();
-            var selected_ids = $('#person_responsible_dropdown_' + ms_id).val();
-            $('#cover-spin').show(0);
-            fetch("/save_selected_user_responsible/", {
-                method: "POST",
-                body: JSON.stringify({
-                    'audit_id': ms_id,
-                    'audit_name': 'Mystery Shopping',
-                    'audit_value': selected_ids,
-                }),
-                // Adding headers to the request
-                headers: {
-                    "Content-type": "application/json",
-                    "X-CSRFToken": "{{ csrf_token }}",
-                },
-            })
-                .then((response) => {
-                    // console.log(response);
-                    if (response.redirected) {
-                        window.location.href = response.url;
-                        return;
-                    }
-                    return response.json();
-                })
-                .then((data) => {
-                    // console.log("Success: ", data);
-                    var selected_user = data.user_json;
-                    // var user_list = [7,8,9,10]
-                    if (data.msg == 'success') {
-                        $('#cover-spin').hide(0);
-                        var EditBtn = document.getElementById("edit_person_responsible_btn_" + ms_id);
-                        var saveBtn = document.getElementById("save_person_responsible_btn_" + ms_id);
-                        try {
-                            $('#person_responsible_dropdown_' + ms_id).multiselect('destroy');
-                        } catch (e) { }
-                        var dropdownId = document.getElementById('person_responsible_dropdown_' + ms_id);
-                        EditBtn.classList.remove("d-none");
-                        saveBtn.classList.add("d-none");
-
-                        var html = `<span id="person_responsible_dropdown_${ms_id}">`;
-                        if (selected_user.length > 2) {
-                            html += '<span class="text-muted" data-toggle="tooltip" title="';
-                            selected_user.forEach(function (center) {
-                                html += center.name + ','
-                            });
-                            html += '">'
-                            html += selected_user.length + ' selected';
-                        } else {
-                            selected_user.forEach(function (center) {
-                                html += center.name + ','
-                            });
-                        }
-                        html += "</span>";
-                        console.log('drop', dropdownId)
-                        dropdownId.outerHTML = html;
-
-                    }
-                    else {
-                        $('#cover-spin').hide(0);
-                        alert('Something went wrong, Please try again after refreshing the page')
-                    }
-                });
-        }
 
 </script>

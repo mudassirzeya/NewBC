@@ -27,30 +27,30 @@
                         <tr>
                             <td style="white-space: normal;">
                                 <span class="">
-                                    {% if mystery.audit_status == 'Completed' %} 
+                                    {% if mystery.mystery_checklist.audit_status == 'Completed' %} 
                                     <i class="fas fa-check-circle text-primary"></i> 
-                                    {% elif mystery.audit_status == 'Pending' %} 
+                                    {% elif mystery.mystery_checklist.audit_status == 'Pending' %} 
                                     <i class="far fa-circle text-primary "></i> 
-                                    {% elif mystery.audit_status == 'Action Required' %} 
+                                    {% elif mystery.mystery_checklist.audit_status == 'Action Required' %} 
                                     <i class="fas fa-exclamation-circle text-danger accordion-toggle" data-toggle="collapse" data-target="#agent3_{{mystery.id}}"></i> 
-                                    {% elif mystery.audit_status == 'Action Taken' %} 
+                                    {% elif mystery.mystery_checklist.audit_status == 'Action Taken' %} 
                                     <i class="fas fa-exclamation-circle text-success accordion-toggle" data-toggle="collapse" data-target="#agent3_{{mystery.id}}"></i> 
                                     {% endif %}
-                                    {{mystery.client_journey|default_if_none:'' }} - {{mystery.kra|default_if_none:'' }} <br>
-                                    {{mystery.process|default_if_none:'' }}
+                                    {{mystery.mystery_checklist.client_journey|default_if_none:'' }} - {{mystery.mystery_checklist.kra|default_if_none:'' }} <br>
+                                    {{mystery.mystery_checklist.process|default_if_none:'' }}
                                 </span>
                             </td>
                             <td style="white-space: normal;">
                                 <span class="">
-                                    <b>{{mystery.mystery_shopping.id}} - {{mystery.sequence}} </b> <br>
-                                    {{mystery.checklist|default_if_none:'' }}
+                                    <b>{{mystery.mystery_checklist.mystery_shopping.id}} - {{mystery.mystery_checklist.sequence}} </b> <br>
+                                    {{mystery.mystery_checklist.checklist|default_if_none:'' }}
                                 </span>
                             </td>
                             <td>
                                 <span class="">
-                                    <select class="form-control p-0" name="complience__{{mystery.id}}" id="complience_3__{{forloop.counter}}" onchange="update_exit_check()" {% if mystery.mystery_shopping.auditor_action_reviewed == True %} disabled {% endif %}>
+                                    <select class="form-control p-0" name="complience__{{mystery.id}}" id="complience_3__{{forloop.counter}}" onchange="update_exit_check()" {% if mystery.mystery_checklist.mystery_shopping.auditor_action_reviewed == True %} disabled {% endif %}>
                                         <option value="">Select</option> 
-                                        {% for compliance in mystery.compliance_dropdown|split:"," %} 
+                                        {% for compliance in mystery.mystery_checklist.compliance_dropdown|split:"," %} 
                                         <option {% if mystery.compliance == compliance %} selected {% endif %} value="{{compliance}}">{{compliance}}
                                         </option>
                                         {% endfor %}
@@ -59,12 +59,12 @@
                             </td>
                             <td style="white-space: normal;">
                                 <span class="">
-                                    {{mystery.relative_gaps_found|default_if_none:'' }}
+                                    {{mystery.mystery_checklist.relative_gaps_found|default_if_none:'' }}
                                 </span>
                             </td>
                             <td>
                                 <span class="">
-                                    <textarea class="form-control" id="remark_3__{{forloop.counter}}" rows="3" onchange="update_exit_check()" {% if mystery.mystery_shopping.auditor_action_reviewed == True %} readonly {% endif %}>{{mystery.remark|default_if_none:'' }}</textarea>
+                                    <textarea class="form-control" id="remark_3__{{forloop.counter}}" rows="3" onchange="update_exit_check()" {% if mystery.mystery_checklist.mystery_shopping.auditor_action_reviewed == True %} readonly {% endif %}>{{mystery.remark|default_if_none:'' }}</textarea>
                                     <span class="text-danger" id="remark_error_3__{{forloop.counter}}"></span>
                                     <!-- <input type="text" class="form-control" value="{{mystery.remark|default_if_none:'' }}" id="remark_3__{{forloop.counter}}"> -->
                                 </span>
@@ -72,7 +72,7 @@
                             <td>
                                 <span class="">
                                     <input class="form-control" type="text" name="" readonly 
-                                    value="{{mystery.staff.zenoti_data.employee_name}}">
+                                    value="{{mystery.staff.user.first_name}} {{mystery.staff.user.last_name}}">
                                     <input type="hidden" disabled name="user_3__{{mystery.id}}" value="{{mystery.staff.id}}" 
                                     id="user_3__{{forloop.counter}}">
                                 </span>
