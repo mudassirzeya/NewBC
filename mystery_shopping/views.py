@@ -1220,7 +1220,8 @@ def mystery_shopping_detail(request, pk):
         mystery_checklist__in=all_service_agent_mystery_detail_3)
     # all_therapy_emp = ZenotiEmployeesData.objects.filter(job_info='Therapist')
     # all_therapy_ext_emp = ExtendedZenotiEmployeesData.objects.all()
-    all_users_query = UserProfile.objects.all().exclude(is_super_admin=True)
+    all_users_query = UserProfile.objects.all().exclude(
+        is_super_admin=True).prefetch_related('user')
     all_employee_list = []
     for each_user in all_users_query:
         tempUserObj = []
