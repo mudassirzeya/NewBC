@@ -1266,13 +1266,13 @@ def mystery_shopping_detail(request, pk):
             user_resp.delete()
 
         return redirect('mystery_shopping_detail', pk=pk)
-    context = {'all_mystery_detail': all_mystery_detail,
+    context = {'all_audit_detail': all_mystery_detail,
                'staffProfile': staffProfile,
                'all_user_responsible_profile': all_user_responsible_profile,
                'all_employee': all_employee,
                'total_length': all_mystery_detail.count(),
                'total_service_agent_length': all_service_agent_mystery_detail_1.count(),
-               'mystery_shopping': mystery_shopping,
+               'audit_query': mystery_shopping,
                'all_service_agent_mystery_detail_1': all_user_responsible_s1,
                'all_service_agent_mystery_detail_2': all_user_responsible_s2,
                'all_service_agent_mystery_detail_3': all_user_responsible_s3,

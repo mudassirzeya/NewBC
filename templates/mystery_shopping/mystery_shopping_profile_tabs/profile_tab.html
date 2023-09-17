@@ -204,7 +204,7 @@
 <script>
     $(document).ready(() => {
         all_employee_list = {{ all_employee_list|safe }};
-        center_id = {{ mystery_shopping.center.id }};
+        center_id = {{ audit_query.center.id }};
     });
 
     var all_employee_list = [];
