@@ -253,7 +253,7 @@
         if(kra_list.length == 1){
             selected_kra = kra_list[0];
             need_empty = false;
-            change_user_as_per_kra({'id':'kra_dropdown__' + rowCount + 'new', 'value':selected_kra})
+            change_user_as_per_kra({'id':rowCount + 'new', 'value':selected_kra})
         }
         create_select_options_from_array('kra_dropdown__' + rowCount + 'new', kra_list, need_empty, selected_kra);
         create_select_options_from_array('compliance_dropdown__' + rowCount + 'new', compliance_list, true)
