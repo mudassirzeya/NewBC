@@ -5,11 +5,19 @@
         <div class="row">
             <div class="col">
                 <div class="row">
-                    <div class="col-md-6"> <strong>Associated Centers</strong>
+                    <div class="col-md-3"> <strong>First Name</strong>
+                        <br>
+                        <input class="form-control" type="text" name="first_name" value="{{employee_detail.user.first_name|default_if_none:''}}">
+                    </div>
+                    <div class="col-md-3"> <strong>Last Name</strong>
+                        <br>
+                        <input class="form-control" type="text" name="last_name" value="{{employee_detail.user.last_name|default_if_none:''}}">
+                    </div>
+                    <div class="col-md-3"> <strong>Associated Centers</strong>
                         <br>
                         {{form.associated_center}}
                     </div>
-                    <div class="col-md-6"> <strong>Associated KRAs</strong>
+                    <div class="col-md-3"> <strong>Associated KRAs</strong>
                         <br>
                         {{form.associated_role}}
                     </div>
@@ -20,7 +28,7 @@
         <div class="row">
             <div class="col">
                 <div class="row">
-                    <div class="col-md-6"> <strong>Office Time</strong>
+                    <div class="col-md-4"> <strong>Office Time</strong>
                         <br>
                         <div class="row">
                             <div class="col">
@@ -31,9 +39,13 @@
                             </div>
                         </div>
                     </div>
-                    <div class="col-md-6"> <strong>Week Off</strong>
+                    <div class="col-md-4"> <strong>Week Off</strong>
                         <br>
                         {{form.week_off}}
+                    </div>
+                    <div class="col-md-4"> <strong>Status</strong>
+                        <br>
+                        {{form.user_status}}
                     </div>
                 </div>
             </div>
@@ -44,7 +56,7 @@
                 <div class="form-check">
                     <br>
                     <!-- <input class="form-check-input" type="checkbox" value="" id="invalidCheck" required> -->
-                    <input {% if is_roster %} checked {% endif %} {% if extra_employee_detail.is_manager %} disabled {% endif %} type="checkbox" name="is_roster_check" id="is_roster_check">
+                    {{form.roster_access}}
                     <label class="form-check-label" for="invalidCheck">
                         <strong>Get Roster Access ?</strong>
                     </label>
@@ -88,7 +100,7 @@
                     {% csrf_token %}
                     <select class="form-control" name="remove_centers" id="remove_centers" required>
                         <option value="">Select center to remove</option>
-                        {% for center in extra_employee_detail.associated_center.all %}
+                        {% for center in employee_detail.associated_center.all %}
                         <option value="{{center.id}}">{{center}}</option>
                         {% endfor %}
                     </select>
@@ -112,21 +124,7 @@
                 allowClear: true,
                 // dropdownParent: $('#extra_data_div')
             });
-        });
-    
-    $(document).ready(function () {
-            $('#id_associated_role').select2({
-                dropdownAutoWidth: true,
-                multiple: true,
-                width: '100%',
-                height: '30px',
-                placeholder: "Select",
-                allowClear: true,
-                // dropdownParent: $('#extra_data_div')
-            });
-        });
 
-    $(document).ready(function () {
             $('#id_week_off').select2({
                 dropdownAutoWidth: true,
                 multiple: true,
@@ -136,17 +134,40 @@
                 allowClear: true,
                 // dropdownParent: $('#extra_data_div')
             });
+
+            $('#id_associated_role').select2({
+                dropdownAutoWidth: true,
+                multiple: true,
+                width: '100%',
+                height: '30px',
+                placeholder: "Select",
+                allowClear: true,
+                // dropdownParent: $('#extra_data_div')
+            });
+            toggleRosterField();
+
         });
 
         function pass_required(t){
             // console.log('val', checkbox_val)
             if (document.getElementById(t.id).checked) {
                 // document.getElementById('id_password').required = true;
-                document.getElementById('is_roster_check').checked = false;
-                document.getElementById('is_roster_check').disabled = true;
+                document.getElementById('id_roster_access').checked = false;
+                document.getElementById('id_roster_access').disabled = true;
             }else{
                 // document.getElementById('id_password').required = false;
-                document.getElementById('is_roster_check').disabled = false;
+                document.getElementById('id_roster_access').disabled = false;
+            }
+        }
+
+        function toggleRosterField() {
+            var isManagerCheckbox = document.getElementById('id_is_manager');
+            var isRosterCheckbox = document.getElementById('id_roster_access');
+            if (isManagerCheckbox.checked) {
+                console.log('yes')
+                isRosterCheckbox.disabled = true;
+            } else {
+                isManagerCheckbox.disabled = false;
             }
         }
 

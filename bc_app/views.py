@@ -1,8 +1,8 @@
 from django.shortcuts import render, redirect
 from django.contrib.auth import authenticate, login, logout
-from .models import UserProfile, ZenotiCentersData, ZenotiEmployeesData, SecretKeyModel, ExtendedZenotiEmployeesData, AssociatedRoleOptions, WeekOffOptions, EmployeeRoster, ExtendedZenotiCenterData, ExtendedZenotiEmployeesLeaveData, EmployeeScheduler, SectionOption, Position, OperationOption, ErrorLog, AuditAccess, SlrAudit, SLRSalonAuditAccess, SlrSalonImages, SlrDetail, MonthAudit, UserTypes, CentralAccess, AuditTypes
+from .models import UserProfile, ZenotiCentersData, ZenotiEmployeesData, SecretKeyModel, ExtendedZenotiEmployeesData, AssociatedRoleOptions, WeekOffOptions, EmployeeRoster, ExtendedZenotiCenterData, EmployeesLeaveData, EmployeeScheduler, SectionOption, Position, OperationOption, ErrorLog, AuditAccess, SlrAudit, SLRSalonAuditAccess, SlrSalonImages, SlrDetail, MonthAudit, UserTypes, CentralAccess, AuditTypes
 from mystery_shopping.models import MysteryShoppingDetail, MysteryShoppingOverview, MysteryChecklistPersonResponsible
-from .forms import ExtendedZenotiDataForm, EmployeeRosterForm, ExtendedZenotiCenterDataForm, SlrAuditForm
+from .forms import ExtendedUserDataForm, EmployeeRosterForm, ExtendedZenotiCenterDataForm, SlrAuditForm
 from django.contrib import messages
 from django.http import JsonResponse, HttpResponse
 from django.core import serializers
@@ -159,217 +159,122 @@ def admin_zenotiCenter_page(request):
 
 
 @login_required(login_url='user_login')
-def zenotiUsers_page(request):
+def stafflist_page(request):
     user = request.user
     staffProfile = UserProfile.objects.get(user=user)
-    try:
-        selected_center = request.GET.get('select_center')
-    except Exception:
-        selected_center = None
-    try:
-        selected_jobtitle = request.GET.get('select_jobtitle')
-    except Exception:
-        selected_jobtitle = None
-    try:
-        searched_text = request.GET.get('searched_text')
-    except Exception:
-        searched_text = None
+    all_centers = ExtendedZenotiCenterData.objects.filter(
+        center_status='Active')
+    selected_center = request.GET.get('select_center')
+    searched_text = request.GET.get('searched_text')
     select_is_manager = request.GET.get('select_is_manager')
-    # print('query', selected_center, selected_jobtitle, searched_text)
     try:
-        searched_center = ZenotiCentersData.objects.get(
+        searched_center = ExtendedZenotiCenterData.objects.get(
             id=int(selected_center))
     except Exception:
         searched_center = None
-    try:
-        searched_center_extend = ExtendedZenotiCenterData.objects.get(
-            zenoti_data=searched_center)
-    except Exception:
-        searched_center_extend = None
-    all_employee_query = ZenotiEmployeesData.objects.all().select_related(
-        'user__user').prefetch_related('zenoti_center')
-    all_employees = all_employee_query
-    all_employees_extend_query = ExtendedZenotiEmployeesData.objects.all(
-    ).select_related('zenoti_data').prefetch_related('associated_center__zenoti_data')
-    all_employees_extend = all_employees_extend_query
+    all_employee_query = UserProfile.objects.all().exclude(
+        user__is_superuser=True).order_by('-id')
     if searched_center:
-        all_employees_extend = all_employees_extend.filter(
-            associated_center=searched_center_extend)
-        all_employees = all_employees.filter(
-            id__in=all_employees_extend.values('zenoti_data')
-        )
-    if selected_jobtitle:
-        all_employees = all_employees.filter(job_info=selected_jobtitle)
-        all_employees_extend = all_employees_extend.filter(
-            zenoti_data__in=all_employees
-        )
-    if select_is_manager:
-        all_employees_extend = all_employees_extend.filter(
-            is_manager=True)
-        all_employees = all_employees.filter(
-            id__in=all_employees_extend.values('zenoti_data')
-        )
-
+        all_employee_query = all_employee_query.filter(
+            associated_center=searched_center)
     if searched_text:
         split_text = searched_text.split()
         for text in split_text:
-            all_employees = all_employees.filter(
-                Q(employee_code__icontains=text) |
-                Q(employee_name__icontains=text)
+            all_employee_query = all_employee_query.filter(
+                Q(user__first_name__icontains=text) |
+                Q(user__last_name__icontains=text) |
+                Q(user__username__icontains=text)
             )
-            all_employees_extend = all_employees_extend.filter(
-                zenoti_data__in=all_employees
-            )
-    employee_list = []
-    for each_emp in all_employees:
-        temp = {}
-        temp['employee_code'] = each_emp.employee_code
-        temp['name'] = each_emp.employee_name
-        temp['username'] = each_emp.user.user.username
-        temp['job'] = each_emp.job_info
-        temp['gender'] = each_emp.gender
-        temp['id'] = each_emp.id
-        temp['assigned_center'] = ''
-        for each_ex_emp in all_employees_extend:
-            if each_emp == each_ex_emp.zenoti_data:
-                for each_cent in each_ex_emp.associated_center.all():
-                    temp['assigned_center'] += each_cent.zenoti_data.name+', '
-        employee_list.append(temp)
-    page = Paginator(employee_list, 20)
+    if select_is_manager:
+        all_employee_query = all_employee_query.filter(
+            is_manager=True)
+
+    page = Paginator(all_employee_query, 20)
     page_num = request.GET.get('page', 1)
     try:
         staff_page = page.page(page_num)
     except EmptyPage:
         staff_page = page.page(1)
-    all_centers = ZenotiCentersData.objects.all()
-    all_jobtitle = ZenotiEmployeesData.objects.order_by(
-    ).values_list('job_info', flat=True).distinct()
-    # print('5', datetime.now())
-    # print('jobtitle', all_jobtitle)
     if request.method == "POST":
-        # print('start', datetime.now())
-        for each_center in all_centers:
-            page_number = 1
-            while True:
-                retry_count = 1
-                c_id = each_center.zenoticenterId
-                url = f"https://api.zenoti.com/v1/centers/{c_id}/employees?page={page_number}&size=100"
-                head = {"Authorization": "apikey "+api_key}
-                while True:
-                    try:
-                        response = requests.request("GET", url, headers=head)
-                        break
-                    except Exception:
-                        time.sleep(5)
-                        retry_count = retry_count+1
-                        if retry_count > 5:
-                            break
-                response_got = json.loads(response.text)
-                employees_got = response_got.get('employees')
-                print(response_got)
-                if not employees_got:
-                    break
-                for employee in employees_got:
-                    try:
-                        existing_employee_user = User.objects.get(
-                            username=employee['personal_info']['user_name'])
-                    except Exception:
-                        existing_employee_user = None
-
-                    if existing_employee_user is None:
-                        new_user = User.objects.create_user(
-                            username=employee['personal_info']['user_name'],
-                            password=employee['id'],
-                            first_name=employee['personal_info']['first_name'],
-                            last_name=employee['personal_info']['last_name']
-                        )
-                        new_userprofile = UserProfile.objects.create(
-                            user=new_user,
-                            password=employee['id'],
-                            user_type='Zenoti'
-                        )
-                        zenoti_employe_data = ZenotiEmployeesData.objects.create(
-                            user=new_userprofile,
-                            employee_code=employee['code'],
-                            employee_id=employee['id'],
-                            employee_name=employee['personal_info']['name'],
-                            gender=employee['personal_info']['gender'],
-                            job_info=employee['job_info']['name'],
-                        )
-                        zenoti_employe_data.zenoti_center.add(each_center)
-                        ExtendedZenotiEmployeesData.objects.create(
-                            zenoti_data=zenoti_employe_data,
-                            office_start_time='09:00:00',
-                            office_end_time='21:00:00'
-                        )
-                    else:
-                        try:
-                            existing_employee = ZenotiEmployeesData.objects.get(
-                                employee_id=employee['id'])
-                        except Exception:
-                            existing_employee = None
-
-                        if existing_employee:
-                            existing_employee.employee_code = employee['code']
-                            existing_employee.employee_name = employee['personal_info']['name']
-                            existing_employee.gender = employee['personal_info']['gender']
-                            existing_employee.job_info = employee['job_info']['name']
-                            existing_employee.save()
-                            if not each_center in existing_employee.zenoti_center.all():
-                                existing_employee.zenoti_center.add(
-                                    each_center)
-                page_number = page_number+1
-        print('end', datetime.now())
-        return redirect('zenoti_staffs_list')
+        if 'add_new_user' in request.POST:
+            first_name = request.POST.get("first_name")
+            last_name = request.POST.get("last_name")
+            username = request.POST.get("email")
+            phone = request.POST.get("phone")
+            passcode = request.POST.get("passcode")
+            try:
+                already_user = User.objects.get(username=username)
+            except Exception:
+                already_user = None
+                # print('user', already_user)
+            if already_user is None:
+                new_user = User.objects.create_user(
+                    username=username, password=passcode, first_name=first_name, last_name=last_name)
+                UserProfile.objects.create(
+                    user=new_user,
+                    phone=phone,
+                    email=username,
+                    password=passcode,
+                    user_type='Non Zenoti',
+                    user_status='Active',
+                )
+            else:
+                messages.info(
+                    request, 'This Email Id is already exist in our DataBase')
+        if 'delete_main_user' in request.POST:
+            del_id = request.POST.get("delete_main_user")
+            try:
+                user_profile = UserProfile.objects.get(id=int(del_id))
+            except Exception:
+                user_profile = None
+            print('user', user_profile)
+            if user_profile:
+                user_profile.user.delete()
+        return redirect('staff_lists')
     context = {
         'staffProfile': staffProfile,
         'employee_list': staff_page,
-        'all_centers': all_centers, 'all_jobtitle': all_jobtitle,
+        'all_centers': all_centers,
         'selected_center': selected_center,
-        'selected_jobtitle': selected_jobtitle,
         'searched_text': searched_text,
         'select_is_manager': select_is_manager}
-    return render(request, "zenotiUser.html", context)
+    return render(request, "all_user_list.html", context)
 
 
 @login_required(login_url='user_login')
-def admin_employee_profile_page(request, pk):
+def employee_profile_page(request, pk):
     user = request.user
     staffProfile = UserProfile.objects.get(user=user)
-    usertype = staffProfile.user_type
-    employee_detail = ZenotiEmployeesData.objects.get(id=pk)
-    try:
-        extra_employee_detail = ExtendedZenotiEmployeesData.objects.get(
-            zenoti_data=employee_detail)
-    except Exception:
-        extra_employee_detail = None
+    employee_detail = UserProfile.objects.get(id=pk)
 
     try:
-        employee_leave_detail = ExtendedZenotiEmployeesLeaveData.objects.filter(
-            zenoti_data=extra_employee_detail)
+        employee_leave_detail = EmployeesLeaveData.objects.filter(
+            user_profile=employee_detail)
     except Exception:
         employee_leave_detail = None
-    form = ExtendedZenotiDataForm(
-        request.POST or None, instance=extra_employee_detail)
-    is_roster = employee_detail.user.roster_access
+    form = ExtendedUserDataForm(
+        request.POST or None, instance=employee_detail)
+    is_roster = employee_detail.roster_access
     all_centers = ZenotiCentersData.objects.all()
     all_roles = AssociatedRoleOptions.objects.all()
     all_weekoff = WeekOffOptions.objects.all()
     if request.method == 'POST':
         if 'extra_data_form' in request.POST:
             if form.is_valid():
-                is_roster_access = request.POST.get('is_roster_check') == 'on'
-                this_userprofile = employee_detail.user
-                this_userprofile.roster_access = is_roster_access
-                this_userprofile.save()
+                first_name = request.POST.get('first_name')
+                last_name = request.POST.get('last_name')
+                this_user_profile = employee_detail.user
+                this_user_profile.first_name = first_name
+                this_user_profile.last_name = last_name
+                this_user_profile.save()
                 form.save()
         if 'set_staff_password' in request.POST:
             new_pass = request.POST.get('new_password')
-            user_of_this_profile = employee_detail.user.user
+            user_of_this_profile = employee_detail.user
             user_of_this_profile.set_password(new_pass)
             user_of_this_profile.save()
-            extra_employee_detail.password = new_pass
-            extra_employee_detail.save()
+            employee_detail.password = new_pass
+            employee_detail.save()
 
         if 'leave_form' in request.POST:
             leave_from = request.POST.get('leave_from')
@@ -377,8 +282,8 @@ def admin_employee_profile_page(request, pk):
             leave_note = request.POST.get('leave_note')
             leave_status = request.POST.get('leave_status')
 
-            ExtendedZenotiEmployeesLeaveData.objects.create(
-                zenoti_data=extra_employee_detail,
+            EmployeesLeaveData.objects.create(
+                user_profile=employee_detail,
                 leave_from_date=leave_from,
                 leave_to_date=leave_to,
                 note=leave_note,
@@ -392,7 +297,7 @@ def admin_employee_profile_page(request, pk):
             leave_note = request.POST.get('edit_leave_note')
             leave_status = request.POST.get('edit_leave_status')
             try:
-                leave_query = ExtendedZenotiEmployeesLeaveData.objects.get(
+                leave_query = EmployeesLeaveData.objects.get(
                     id=int(leave_id))
             except Exception:
                 leave_query = None
@@ -411,13 +316,13 @@ def admin_employee_profile_page(request, pk):
                 center = None
 
             all_schedulers = EmployeeScheduler.objects.filter(
-                employee=extra_employee_detail, center=center)
+                employee=employee_detail, center=center)
 
             all_rosters = EmployeeRoster.objects.filter(
-                employee=extra_employee_detail, center=center
+                employee=employee_detail, center=center
             )
             print(today_date)
-            extra_employee_detail.associated_center.remove(center)
+            employee_detail.associated_center.remove(center)
             for scheduler in all_schedulers:
                 if scheduler.appoint_date >= today_date:
                     scheduler.delete()
@@ -425,17 +330,66 @@ def admin_employee_profile_page(request, pk):
             for roster in all_rosters:
                 if roster.appoint_date >= today_date:
                     roster.delete()
-
         return redirect('body_craft_staff_profile', pk=pk)
-
     context = {'staffProfile': staffProfile,
-               'extra_employee_detail': extra_employee_detail,
                'employee_detail': employee_detail, 'form': form,
                'all_weekoff': all_weekoff, 'all_roles': all_roles,
                'all_centers': all_centers,
                'employee_leave_detail': employee_leave_detail,
                'is_roster': is_roster}
     return render(request, "admin_employee_profile.html", context)
+
+
+@login_required(login_url='user_login')
+def zenotiUsers_page(request):
+    user = request.user
+    staffProfile = UserProfile.objects.get(user=user)
+    try:
+        selected_jobtitle = request.GET.get('select_jobtitle')
+    except Exception:
+        selected_jobtitle = None
+    try:
+        searched_text = request.GET.get('searched_text')
+    except Exception:
+        searched_text = None
+    all_employee_query = ZenotiEmployeesData.objects.all().select_related(
+        'user__user')
+    all_employees = all_employee_query
+    if selected_jobtitle:
+        all_employees = all_employees.filter(job_info=selected_jobtitle)
+
+    if searched_text:
+        split_text = searched_text.split()
+        for text in split_text:
+            all_employees = all_employees.filter(
+                Q(employee_code__icontains=text) |
+                Q(employee_name__icontains=text)
+            )
+    employee_list = []
+    for each_emp in all_employees:
+        temp = {}
+        temp['employee_code'] = each_emp.employee_code
+        temp['employee_id'] = each_emp.employee_id
+        temp['name'] = each_emp.employee_name
+        temp['username'] = each_emp.user.user.username
+        temp['job'] = each_emp.job_info
+        temp['gender'] = each_emp.gender
+        employee_list.append(temp)
+    page = Paginator(employee_list, 50)
+    page_num = request.GET.get('page', 1)
+    try:
+        staff_page = page.page(page_num)
+    except EmptyPage:
+        staff_page = page.page(1)
+    all_jobtitle = ZenotiEmployeesData.objects.order_by(
+    ).values_list('job_info', flat=True).distinct()
+    context = {
+        'staffProfile': staffProfile,
+        'employee_list': staff_page,
+        'all_jobtitle': all_jobtitle,
+        'selected_jobtitle': selected_jobtitle,
+        'searched_text': searched_text}
+    return render(request, "users_page.html", context)
 
 
 @login_required(login_url='user_login')
@@ -455,108 +409,6 @@ def admin_page(request):
                'total_employees': total_employees,
                'staffProfile': staffProfile}
     return render(request, "admin_home.html", context)
-
-
-# @login_required(login_url='user_login')
-# def add_admin(request):
-#     user = request.user
-#     staffProfile = UserProfile.objects.get(user=user)
-#     all_user = UserProfile.objects.all().exclude(user__is_superuser=True)
-#     if request.method == "POST":
-#         phone = request.POST.get("phone")
-#         passcode = request.POST.get("passcode")
-#         name = request.POST.get("name")
-#         username = request.POST.get("email")
-#         try:
-#             already_user = User.objects.get(username=username)
-#         except Exception:
-#             already_user = None
-#             # print('user', already_user)
-#         if already_user is None:
-#             new_user = User.objects.create_user(
-#                 username=username, password=passcode, first_name=name)
-#             UserProfile.objects.create(
-#                 user=new_user,
-#                 phone=phone,
-#                 email=username,
-#                 password=passcode,
-#                 user_type='admin',
-#             )
-#             return redirect('admin_team')
-#         else:
-#             messages.info(
-#                 request, 'This Email Id is already exist in our DataBase')
-#             return redirect('admin_team')
-#     context = {'all_user': all_user, 'staffProfile': staffProfile}
-#     return render(request, "admin_team.html", context)
-
-
-@login_required(login_url='user_login')
-def other_user_page(request):
-    user = request.user
-    staffProfile = UserProfile.objects.get(user=user)
-    audit_user = UserProfile.objects.filter(
-        user_type='Non Zenoti').exclude(user__is_superuser=True)
-    if request.method == "POST":
-        if 'new_audit_user' in request.POST:
-            phone = request.POST.get("phone")
-            passcode = request.POST.get("passcode")
-            name = request.POST.get("name")
-            username = request.POST.get("email")
-            try:
-                already_user = User.objects.get(username=username)
-            except Exception:
-                already_user = None
-                # print('user', already_user)
-            if already_user is None:
-                new_user = User.objects.create_user(
-                    username=username, password=passcode, first_name=name)
-                UserProfile.objects.create(
-                    user=new_user,
-                    phone=phone,
-                    email=username,
-                    password=passcode,
-                    user_type='Non Zenoti',
-                    user_status='Active',
-                )
-            else:
-                messages.info(
-                    request, 'This Email Id is already exist in our DataBase')
-        if 'edit_audit_user' in request.POST:
-            user_id = request.POST.get('audit_user_id')
-            name = request.POST.get('edit_name')
-            phone = request.POST.get('edit_phone')
-            email = request.POST.get('edit_email')
-            user_status = request.POST.get('edit_user_status')
-            try:
-                audit_user = UserProfile.objects.get(id=int(user_id))
-            except Exception:
-                audit_user = None
-
-            audit_user.phone = phone
-            audit_user.email = email
-            audit_user.user_status = user_status
-            audit_user.save()
-
-            main_user = audit_user.user
-            main_user.first_name = name
-            main_user.save()
-        if 'update_user_password' in request.POST:
-            user_id = request.POST.get("user_id")
-            passcode = request.POST.get("edit_passcode")
-            try:
-                audit_user = UserProfile.objects.get(id=int(user_id))
-            except Exception:
-                audit_user = None
-            audit_user.password = passcode
-            audit_user.save()
-            main_user = audit_user.user
-            main_user.set_password(passcode)
-            main_user.save()
-        return redirect('other_staffs_list')
-    context = {'audit_user': audit_user,
-               'staffProfile': staffProfile}
-    return render(request, "users_page.html", context)
 
 
 def edit_user_modal_popup(request):
@@ -656,7 +508,17 @@ def sent_selected_user_list_to_frontend(request):
                     temp['id'] = sanitize_name(each_compliance)
                     temp['name'] = sanitize_name(each_compliance)
                     all_compliance_list.append(temp)
-            return JsonResponse({"msg": "success", "user_json": audit_detail_query.staff.id, "selected_compliance": audit_detail_query.compliance, "remark": audit_detail_query.remark, "all_compliance_list": all_compliance_list})
+                kra_dropdown = audit_detail_query.mystery_checklist.kra
+                list_kra_dropdown = kra_dropdown.split(
+                    ',') if ',' in kra_dropdown else [kra_dropdown]
+                kra_json = []
+                for each_kra in list_kra_dropdown:
+                    tempKra = {}
+                    tempKra['id'] = sanitize_name(each_kra)
+                    tempKra['name'] = sanitize_name(each_kra)
+                    kra_json.append(tempKra)
+
+            return JsonResponse({"msg": "success", "user_json": audit_detail_query.staff.id, "selected_compliance": audit_detail_query.compliance, "remark": audit_detail_query.remark, "all_compliance_list": all_compliance_list, "selected_kra": audit_detail_query.kra, "all_kra_list": kra_json})
         else:
             return JsonResponse({"msg": "failed"})
 
@@ -666,11 +528,24 @@ def sent_all_user_list_and_compliance_to_frontend(request):
         data = json.loads(request.body)
         audit_name = data['audit_name']
         checklist_id = data['checklist_id']
-        user_query = UserProfile.objects.all().exclude(is_super_admin=True)
+        # user_query = UserProfile.objects.all().exclude(is_super_admin=True)
         if checklist_id:
             if audit_name == 'Mystery Shopping':
                 checklist_query = MysteryShoppingDetail.objects.get(
                     id=int(checklist_id))
+                user_query = UserProfile.objects.filter(
+                    associated_center=checklist_query.mystery_shopping.center).exclude(is_super_admin=True)
+                kra_dropdown = checklist_query.kra
+                list_kra_dropdown = kra_dropdown.split(
+                    ',') if ',' in kra_dropdown else [kra_dropdown]
+                print('list', list_kra_dropdown)
+                kra_json = []
+                for each_kra in list_kra_dropdown:
+                    tempKra = {}
+                    tempKra['id'] = sanitize_name(each_kra)
+                    tempKra['name'] = sanitize_name(each_kra)
+                    kra_json.append(tempKra)
+                print(kra_json)
                 compliance_dropdown = checklist_query.compliance_dropdown
                 list_compliance_dropdown = compliance_dropdown.split(',')
                 print(list_compliance_dropdown)
@@ -680,15 +555,17 @@ def sent_all_user_list_and_compliance_to_frontend(request):
                     temp['id'] = sanitize_name(each_compliance)
                     temp['name'] = sanitize_name(each_compliance)
                     compliance_json.append(temp)
-            all_users = []
-            for each_user in user_query:
-                tempUserObj = {}
-                tempUserObj["id"] = each_user.id
-                sanitized_first_name = sanitize_name(each_user.user.first_name)
-                sanitized_last_name = sanitize_name(each_user.user.last_name)
-                tempUserObj["name"] = f"{sanitized_first_name} {sanitized_last_name}"
-                all_users.append(tempUserObj)
-            return JsonResponse({"msg": "success", "user_json": all_users, "compliance_json": compliance_json})
+                all_users = []
+                for each_user in user_query:
+                    tempUserObj = {}
+                    tempUserObj["id"] = each_user.id
+                    sanitized_first_name = sanitize_name(
+                        each_user.user.first_name)
+                    sanitized_last_name = sanitize_name(
+                        each_user.user.last_name)
+                    tempUserObj["name"] = f"{sanitized_first_name} {sanitized_last_name}"
+                    all_users.append(tempUserObj)
+            return JsonResponse({"msg": "success", "user_json": all_users, "compliance_json": compliance_json, "kra_json": kra_json})
         else:
             return JsonResponse({"msg": "failed"})
 
@@ -706,12 +583,13 @@ def save_selected_user_responsible(request):
     if request.method == "POST":
         data = json.loads(request.body)
         audit_name = data['audit_name']
-        audit_id = data['audit_id']
+        user_resp_row_id = data['user_resp_row_id']
         selected_compliance = data['selected_compliance']
         selected_user = data['selected_user']
         status = data['status']
         checklist_id = data['checklist_id']
         get_remark = data['get_remark']
+        get_kra = data['get_kra']
         try:
             staff_query = UserProfile.objects.get(id=int(selected_user))
         except Exception:
@@ -762,14 +640,15 @@ def save_selected_user_responsible(request):
                     compliance=compliance_value,
                     compliance_category=compliance_category,
                     compliance_category_percentage=compliance_percentage,
-                    remark=get_remark
+                    remark=get_remark,
+                    kra=get_kra
                 )
                 person_resp_query.mystery_checklist.audit_status = 'Completed'
                 person_resp_query.mystery_checklist.save()
-        elif status == 'Old' or status == 'Old-New':
+        elif status == 'Old':
             try:
                 person_resp_query = MysteryChecklistPersonResponsible.objects.get(
-                    id=int(audit_id))
+                    id=int(user_resp_row_id))
             except Exception:
                 person_resp_query = None
             person_resp_query.staff = staff_query
@@ -777,14 +656,15 @@ def save_selected_user_responsible(request):
             person_resp_query.compliance_category = compliance_category
             person_resp_query.compliance_category_percentage = compliance_percentage
             person_resp_query.remark = get_remark
+            person_resp_query.kra = get_kra
             person_resp_query.save()
         tempUserObj = {}
         tempUserObj["id"] = staff_query.id
         sanitized_first_name = sanitize_name(staff_query.user.first_name)
         sanitized_last_name = sanitize_name(staff_query.user.last_name)
         tempUserObj["name"] = f"{sanitized_first_name} {sanitized_last_name}"
-        if audit_id:
-            return JsonResponse({"msg": "success", "user_json": tempUserObj, "compliance": compliance_value, "user_resp_query_id": person_resp_query.id, "get_remark": get_remark})
+        if user_resp_row_id:
+            return JsonResponse({"msg": "success", "user_json": tempUserObj, "compliance": compliance_value, "user_resp_query_id": person_resp_query.id, "get_remark": get_remark, "get_kra": get_kra})
         else:
             return JsonResponse({"msg": "failed"})
 

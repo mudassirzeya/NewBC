@@ -1,12 +1,13 @@
 from django import forms
-from .models import ExtendedZenotiEmployeesData, EmployeeRoster, ExtendedZenotiCenterData, SlrAudit
+from .models import ExtendedZenotiEmployeesData, EmployeeRoster, ExtendedZenotiCenterData, SlrAudit, UserProfile
 
 
-class ExtendedZenotiDataForm(forms.ModelForm):
+class ExtendedUserDataForm(forms.ModelForm):
     class Meta:
-        model = ExtendedZenotiEmployeesData
-        fields = '__all__'
-        exclude = ['zenoti_data']
+        model = UserProfile
+        fields = ['associated_center', 'associated_role', 'office_start_time',
+                  'office_end_time', 'week_off', 'user_status',
+                  'is_manager', 'roster_access']
 
         widgets = {
             'associated_center': forms.SelectMultiple(attrs={
@@ -36,12 +37,16 @@ class ExtendedZenotiDataForm(forms.ModelForm):
                 'multiple': "multiple",
                 'style': "height: 36px;width: 100%;",
             }),
-            'password': forms.TextInput(attrs={
-                'class': 'form-control',
+            'user_status': forms.Select(attrs={
+                'class': "form-control",
+                'required': "required",
             }),
             'is_manager': forms.CheckboxInput(attrs={
                 'class': 'form-check-input',
                 'onchange': "pass_required(this);"
+            }),
+            'roster_access': forms.CheckboxInput(attrs={
+                'class': 'form-check-input',
             })
         }
 

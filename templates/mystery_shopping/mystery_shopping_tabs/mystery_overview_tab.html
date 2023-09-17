@@ -6,6 +6,16 @@
         /* background-color: rgb(151 112 112); */
         z-index: 1;
     }
+    .summary_pending {
+        background-color: rgb(239, 180, 180) !important;
+    }
+    .summary_completed {
+        background-color: rgb(179, 244, 179) !important;
+    }
+    .checkbox_size {
+        height: 20px; 
+        width: 20px;
+    }
 </style>
 <br>
 <div class="row justify-content-end mr-2">
@@ -17,7 +27,7 @@
             <button class="btn btn-success" type="" onclick="this.form.submit(); this.innerHTML = 'Downloading...';"><i class="fas fa-download"></i> CSV</button>
         </form>
     </div>
-    <button class="btn btn-warning text-white" data-toggle="modal" data-target="#add_mystery_modal">
+    <button class="btn btn-success text-white" data-toggle="modal" data-target="#add_mystery_modal">
         <i class="fas fa-plus"></i> New MS </button>
 </div>
 <div class="row">
@@ -45,51 +55,43 @@
                                 <span class="text-muted">
                                     {{mystery.center|default_if_none:'' }} <br>
                                     {{mystery.month_audit|default_if_none:''}} 
-                                    {% if not staffProfile.user_type == 'staff' %}
-                                        <br>
-                                        By: {{mystery.shopper_name|default_if_none:''}}
-                                    {% endif %}
+                                    <br>
+                                    By: {{mystery.shopper_name|default_if_none:''}}
                                 </span>
                             </td>
                             <td style="white-space: pre-wrap;"><span class="text-muted">{{mystery.service_availed|default_if_none:'' }}</span>
                             </td>
                             <td>
                                 <table class="table-bordered">
-                                    <tr>
-                                        <td style="background-color: rgb(179, 244, 179);">{{mystery.total_question}}</td>
-                                        <td style="background-color: rgb(179, 244, 179);">{{mystery.total_completed_question}}</td>
-                                        <td {% if mystery.total_pending_question == 0 %} style="background-color: rgb(179, 244, 179);" {% else %} style="background-color: rgb(239, 180, 180);" {% endif %}>{{mystery.total_pending_question}}</td>
-                                        <td {% if mystery.total_action_required_question == 0 %} style="background-color: rgb(179, 244, 179);" {% else %} style="background-color: rgb(239, 180, 180);" {% endif %}>{{mystery.total_action_required_question}}</td>
-                                        <td {% if mystery.total_action_required_question == 0 %} style="background-color: rgb(179, 244, 179);" {% else %} style="background-color: rgb(239, 180, 180);" {% endif %}>{{mystery.total_action_taken_question}}</td>
-                                        <td style="background-color: rgb(179, 244, 179);">{{mystery.not_rnr}}</td>
-                                        <td {% if mystery.om_actioned < mystery.not_rnr  %} style="background-color: rgb(239, 180, 180);" {% else %} style="background-color: rgb(179, 244, 179);"  {% endif %}>{{mystery.om_actioned}}</td>
-                                        <td class="text-center" {% if mystery.auditor_action_reviewed == True %} style="background-color: rgb(179, 244, 179);" {% else %} style="background-color: rgb(239, 180, 180);" {% endif %}>
-                                            <input class="auditor_reviewed_checkbox_input" type="checkbox" {% if mystery.auditor_action_reviewed == True %} checked {% endif %} name="auditor_reviewed" id="auditor_reviewed_{{forloop.counter}}" onchange="save_reviewed_checkbox(this, '{{mystery.id}}')" style="height: 20px; width: 20px;">
+                                    <tr class="summary_completed">
+                                        <td class="">{{mystery.total_question}}</td>
+                                        <td class="">{{mystery.total_completed_question}}</td>
+                                        <td {% if not mystery.total_pending_question == 0 %} class="summary_pending" {% endif %}>
+                                            {{mystery.total_pending_question}}
                                         </td>
-                                        <td class="text-center" {% if mystery.om_action_reviewed == True %} style="background-color: rgb(179, 244, 179);" {% else %} style="background-color: rgb(239, 180, 180);" {% endif %}>
-                                            <input class="om_reviewed_checkbox_input" type="checkbox" name="om_reviewed" id="om_reviewed_{{forloop.counter}}" {% if mystery.om_action_reviewed == True %} checked {% endif %} onchange="save_reviewed_checkbox(this, '{{mystery.id}}')" style="height: 20px; width: 20px;">
+                                        <td {% if not mystery.total_action_required_question == 0 %} class="summary_pending" {% endif %}>   {{mystery.total_action_required_question}}
                                         </td>
-                                        <!-- <td {% if mystery.auditor_action_reviewed == True %} style="background-color: rgb(179, 244, 179);" {% else %} style="background-color: rgb(239, 180, 180);" {% endif %}> 
-                                            {% if mystery.auditor_action_reviewed == True %} 
-                                            <i class="fas fa-thumbs-up"></i> 
-                                            {% endif %} 
+                                        <td {% if not mystery.total_action_required_question == 0 %} class="summary_pending" {% endif %}>{{mystery.total_action_taken_question}}
                                         </td>
-                                        <td {% if mystery.om_action_reviewed == True %} style="background-color: rgb(179, 244, 179);" {% else %} style="background-color: rgb(239, 180, 180);" {% endif %}> 
-                                            {% if mystery.om_action_reviewed == True %} 
-                                            <i class="fas fa-check"></i> 
-                                            {% endif %} 
-                                        </td> -->
+                                        <td>{{mystery.not_rnr}}</td>
+                                        <td {% if not mystery.om_actioned == mystery.not_rnr  %} class="summary_pending"  {% endif %}>{{mystery.om_actioned}}</td>
+                                        <td class="text-center {% if mystery.auditor_action_reviewed == False %} summary_pending {% endif %}">
+                                            <input class="auditor_reviewed_checkbox_input checkbox_size" type="checkbox" {% if mystery.auditor_action_reviewed == True %} checked {% endif %} name="auditor_reviewed" id="auditor_reviewed_{{forloop.counter}}" onchange="save_reviewed_checkbox(this, '{{mystery.id}}')">
+                                        </td>
+                                        <td class="text-center {% if mystery.om_action_reviewed == False %} summary_pending {% endif %}">
+                                            <input class="om_reviewed_checkbox_input checkbox_size" type="checkbox" name="om_reviewed" id="om_reviewed_{{forloop.counter}}" {% if mystery.om_action_reviewed == True %} checked {% endif %} onchange="save_reviewed_checkbox(this, '{{mystery.id}}')">
+                                        </td>
                                     </tr>
-                                    <tr>
-                                        <td style="background-color: rgb(179, 244, 179);"><small> Total <br> Questions</small></td>
-                                        <td style="background-color: rgb(179, 244, 179);"><small>Completed <br> Questions</small></td>
-                                        <td {% if mystery.total_pending_question == 0 %} style="background-color: rgb(179, 244, 179);" {% else %} style="background-color: rgb(239, 180, 180);" {% endif %}><small>Pending <br> Questions</small></i></td>
-                                        <td {% if mystery.total_action_required_question == 0 %} style="background-color: rgb(179, 244, 179);" {% else %} style="background-color: rgb(239, 180, 180);" {% endif %}><small>Action <br> Required</small></td>
-                                        <td {% if mystery.total_action_required_question == 0 %} style="background-color: rgb(179, 244, 179);" {% else %} style="background-color: rgb(239, 180, 180);" {% endif %}><small>Action <br> Taken</small></td>
-                                        <td style="background-color: rgb(179, 244, 179);"><small>Non RNR <br> Compliance</small></td>
-                                        <td {% if mystery.om_actioned < mystery.not_rnr  %} style="background-color: rgb(239, 180, 180);" {% else %} style="background-color: rgb(179, 244, 179);"  {% endif %}><small>OM Action <br> Completed</small></td>
-                                        <td {% if mystery.auditor_action_reviewed == True %} style="background-color: rgb(179, 244, 179);" {% else %} style="background-color: rgb(239, 180, 180);" {% endif %}><small>Auditor Action <br> Reviewed</small></td>
-                                        <td {% if mystery.om_action_reviewed == True %} style="background-color: rgb(179, 244, 179);" {% else %} style="background-color: rgb(239, 180, 180);" {% endif %}><small>OM Action <br> Reviewed</small></td>
+                                    <tr class="summary_completed">
+                                        <td><small> Total <br> Questions</small></td>
+                                        <td><small>Completed <br> Questions</small></td>
+                                        <td {% if not mystery.total_pending_question == 0 %} class="summary_pending" {% endif %}><small>Pending <br> Questions</small></i></td>
+                                        <td {% if not mystery.total_action_required_question == 0 %} class="summary_pending" {% endif %}><small>Action <br> Required</small></td>
+                                        <td {% if not mystery.total_action_required_question == 0 %} class="summary_pending" {% endif %}><small>Action <br> Taken</small></td>
+                                        <td><small>Non RNR <br> Compliance</small></td>
+                                        <td {% if not mystery.om_actioned == mystery.not_rnr  %} class="summary_pending"  {% endif %}><small>OM Action <br> Completed</small></td>
+                                        <td {% if mystery.auditor_action_reviewed == False %} class="summary_pending" {% endif %}><small>Auditor Action <br> Reviewed</small></td>
+                                        <td {% if mystery.om_action_reviewed == False %} class="summary_pending" {% endif %}><small>OM Action <br> Reviewed</small></td>
                                     </tr>
                                 </table>
                             </td>

@@ -81,6 +81,7 @@ class MysteryChecklistPersonResponsible(models.Model):
     )
     staff = models.ForeignKey(
         UserProfile, blank=True, null=True, on_delete=models.SET_NULL)
+    kra = models.CharField(max_length=200, null=True, blank=True)
     compliance = models.CharField(max_length=200, null=True, blank=True)
     compliance_category = models.CharField(
         max_length=200, null=True, blank=True)

@@ -1,16 +1,12 @@
 {% extends "base.html" %}
 {% block breadcrumb %} 
-<h5 class="text-primary mb-0" style="font-weight: bold;">Staff Profile >> {{employee_detail.employee_name}}</h5> 
+<h5 class="text-primary mb-0" style="font-weight: bold;"><a class="text-primary" href="{% url 'staff_lists' %}">Staff Profile</a> >> {{employee_detail.user.first_name|default_if_none:''}} {{employee_detail.user.last_name|default_if_none:''}}</h5> 
 {% endblock breadcrumb %}
 {% block content %}
 <div>
     <ul class="nav nav-tabs" id="myTab" role="tablist">
         <li class="nav-item">
-            <a class="nav-link active" id="tag-zenotidata_tab" data-toggle="tab" href="#zenotidata_tab" role="tab"
-                aria-controls="home" aria-selected="true" onclick="return saveTabSelect(this)">Data from Zenoti</a>
-        </li>
-        <li class="nav-item">
-            <a class="nav-link" id="tag-extendedzenotidata_tab" data-toggle="tab" href="#extendedzenotidata_tab" role="tab"
+            <a class="nav-link active" id="tag-extendeduserdata_tab" data-toggle="tab" href="#extendeduserdata_tab" role="tab"
                 aria-controls="profile" aria-selected="false" onclick="return saveTabSelect(this)">Extended Data</a>
         </li>
         <li class="nav-item">
@@ -22,10 +18,7 @@
         </li>
     </ul>
     <div class="tab-content" id="myTabContent">
-        <div class="tab-pane fade show active" id="zenotidata_tab" role="tabpanel" aria-labelledby="home-tab">
-            {% include 'employee_profile_tabs/zenotidata_tab.html' %}
-        </div>
-        <div class="tab-pane fade" id="extendedzenotidata_tab" role="tabpanel" aria-labelledby="profile-tab">
+        <div class="tab-pane fade show active" id="extendeduserdata_tab" role="tabpanel" aria-labelledby="profile-tab">
             {% include 'employee_profile_tabs/extradata_tab.html' %}
         </div>
         <div class="tab-pane fade" id="leavedata_tab" role="tabpanel" aria-labelledby="leave-tab">
@@ -52,7 +45,7 @@
         // sessionStorage.setItem('client_tag', JSON.stringify(storedProductList));
         // var selectedTag = sessionStorage.getItem('client_tag') || null;
         // sessionStorage.setItem('client_tag', storedProductList);
-        var prevSelectedTag = localStorage.getItem("curr_zenotidata_tag");
+        var prevSelectedTag = localStorage.getItem("curr_userdata_tag");
         // console.log(`prevSelectedTag: `, prevSelectedTag);
         if (item.id == prevSelectedTag) {
             return;
@@ -66,21 +59,21 @@
             var tabePaneElement = document.getElementById(tabPaneId);
             tabePaneElement.classList.remove('active');
         }
-        localStorage.setItem("curr_zenotidata_tag", item.id);
+        localStorage.setItem("curr_userdata_tag", item.id);
         // console.log(`cur tag id: `, item.id)
         return true;
     }
 
     function retrieveSelected() {
-        var curTag = localStorage.getItem("curr_zenotidata_tag");
+        var curTag = localStorage.getItem("curr_userdata_tag");
         // console.log(`curTag: `, curTag);
         if (curTag) {
             var curElement = document.getElementById(`${curTag}`);
             if (curElement) {
                 // revome active from first pill and tab in case there's any prev tag in local storage
-                var dataTag = document.getElementById('tag-zenotidata_tab');
+                var dataTag = document.getElementById('tag-extendeduserdata_tab');
                 dataTag.classList.remove("active");
-                var dataTabPaneElement = document.getElementById('zenotidata_tab');
+                var dataTabPaneElement = document.getElementById('extendeduserdata_tab');
                 dataTabPaneElement.classList.remove('active');
 
                 // Add active to tab
@@ -94,12 +87,12 @@
                 // window.location.href = `/clients/${client_id}/?tab=${tab}`;
             } else {
                 // Else set in local storage the current active tab
-                localStorage.setItem("curr_zenotidata_tag", 'tag-zenotidata_tab');
+                localStorage.setItem("curr_userdata_tag", 'tag-extendeduserdata_tab');
             }
 
         } else {
             // Else set in local storage the current active tab
-            localStorage.setItem("curr_zenotidata_tag", 'tag-zenotidata_tab');
+            localStorage.setItem("curr_userdata_tag", 'tag-extendeduserdata_tab');
         }
     }
     retrieveSelected();

@@ -6,7 +6,7 @@ from django.contrib.auth.decorators import login_required
 from django.views.decorators.csrf import csrf_exempt
 from datetime import date, timedelta, datetime
 from .models import MysteryShoppingOverview, MysteryShoppingDetail, MysteryShoppingImages, MonthAudit, MysteryChecklistPersonResponsible
-from bc_app.models import UserProfile, ZenotiEmployeesData, ZenotiCentersData, ExtendedZenotiCenterData, ExtendedZenotiEmployeesData, ExtendedZenotiEmployeesLeaveData, UserTypes, MonthAudit, AuditAccess, AuditTypes, CentralAccess
+from bc_app.models import UserProfile, ZenotiEmployeesData, ZenotiCentersData, ExtendedZenotiCenterData, ExtendedZenotiEmployeesData, EmployeesLeaveData, UserTypes, MonthAudit, AuditAccess, AuditTypes, CentralAccess
 from bc_app.views import sanitize_name
 from bc_app.models import SlrSalonImages
 from .forms import MysteryShoppingForm
@@ -296,11 +296,9 @@ def mystery_shopping_overview(request):
     if not this_user_type:
         this_user_type = access_detail[0][0]
     this_location = access_detail_kv[this_user_type]
-    print('this', this_location)
     all_mystery = MysteryShoppingOverview.objects.none()
     mystery_form = MysteryShoppingForm(request.POST or None)
     mystery_form.fields['center'].queryset = this_location
-    print('user', this_user_type == 'Audit Re')
     if this_user_type == 'Audit Admin':
         all_mystery = all_mystery_master
         if selected_center_ids:
@@ -311,9 +309,7 @@ def mystery_shopping_overview(request):
             all_center = this_location
         else:
             all_center = all_center.filter(id__in=selected_center_ids)
-        print('cent', all_center)
-        all_mystery = all_mystery_master.filter(
-            center__in=all_center)
+        all_mystery = all_mystery_master.filter(center__in=all_center)
     if this_user_type == 'Project Owner':
         if not selected_center_ids:
             all_center = this_location
@@ -1225,14 +1221,23 @@ def mystery_shopping_detail(request, pk):
     # all_therapy_emp = ZenotiEmployeesData.objects.filter(job_info='Therapist')
     # all_therapy_ext_emp = ExtendedZenotiEmployeesData.objects.all()
     all_users_query = UserProfile.objects.all().exclude(is_super_admin=True)
-    all_therapy_ext_emp = []
+    all_employee_list = []
     for each_user in all_users_query:
-        tempUserObj = {}
-        tempUserObj["id"] = each_user.id
+        tempUserObj = []
+        tempUserObj.append(each_user.id)
         sanitized_first_name = sanitize_name(each_user.user.first_name)
         sanitized_last_name = sanitize_name(each_user.user.last_name)
-        tempUserObj["name"] = f"{sanitized_first_name} {sanitized_last_name}"
-        all_therapy_ext_emp.append(tempUserObj)
+        tempUserObj.append(f"{sanitized_first_name} {sanitized_last_name}")
+        kra_list = []
+        for each_role in each_user.associated_role.all():
+            kra_list.append(each_role.name)
+        tempUserObj.append(kra_list)
+        center_list = []
+        for each_center in each_user.associated_center.all():
+            center_list.append(each_center.id)
+        tempUserObj.append(center_list)
+        all_employee_list.append(tempUserObj)
+    # print('user', all_employee_list)
     if request.method == 'POST':
         if 'image_submit' in request.POST:
             description = request.POST.get('desc')
@@ -1272,7 +1277,7 @@ def mystery_shopping_detail(request, pk):
                'all_service_agent_mystery_detail_2': all_user_responsible_s2,
                'all_service_agent_mystery_detail_3': all_user_responsible_s3,
                'all_images_list': all_images_list,
-               'all_therapy_ext_emp': all_therapy_ext_emp,
+               'all_employee_list': all_employee_list,
                'audit_type': 'Mystery Shopping'}
     return render(request, "mystery_shopping/mystery_shopping_profile.html", context)
 

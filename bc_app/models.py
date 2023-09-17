@@ -18,90 +18,6 @@ class AuditTypes(models.Model):
         return str(self.audit_type)
 
 
-class UserProfile(models.Model):
-    ENTRANCE_TYPE = (
-        ('Zenoti', 'Zenoti'),
-        ('Non Zenoti', 'Non Zenoti')
-    )
-    USERSTATUS = (
-        ('Active', 'Active'),
-        ('InActive', 'InActive')
-    )
-    user = models.OneToOneField(
-        User, null=True, blank=True, on_delete=models.CASCADE
-    )
-    is_super_admin = models.BooleanField(default=False, null=True, blank=True)
-    is_audit_admin = models.BooleanField(default=False, null=True, blank=True)
-    profile_pic = models.ImageField(
-        default="profile1.jpg", null=True, blank=True)
-    phone = models.CharField(max_length=20, null=True, blank=True)
-    email = models.CharField(max_length=50, null=True, blank=True)
-    password = models.CharField(max_length=200, null=True, blank=True)
-    user_type = models.CharField(
-        max_length=100, blank=True, choices=ENTRANCE_TYPE)
-    user_type_name = models.ManyToManyField(UserTypes, blank=True)
-    user_status = models.CharField(
-        max_length=200, null=True, blank=True, choices=USERSTATUS)
-    roster_access = models.BooleanField(default=False, null=True, blank=True)
-    date_of_joining = models.DateTimeField(
-        auto_now_add=True, null=True, blank=True)
-
-    def __str__(self):
-        return str(self.user)
-
-
-class SecretKeyModel(models.Model):
-    token = models.CharField(max_length=500, null=True, blank=True)
-
-    def __str__(self):
-        return str(self.token)
-
-# this center data is what we are getting from zenoti
-
-
-class ZenotiCentersData(models.Model):
-    zenoticenterId = models.CharField(max_length=100, null=True, blank=True)
-    code = models.CharField(max_length=100, null=True, blank=True)
-    name = models.CharField(max_length=100, null=True, blank=True)
-    display_name = models.CharField(max_length=100, null=True, blank=True)
-    address_1 = models.CharField(max_length=500, null=True, blank=True)
-    address_2 = models.CharField(max_length=500, null=True, blank=True)
-    city = models.CharField(max_length=100, null=True, blank=True)
-    zip_code = models.CharField(max_length=100, null=True, blank=True)
-    state = models.CharField(max_length=100, null=True, blank=True)
-    country = models.CharField(max_length=100, null=True, blank=True)
-    added_date = models.DateTimeField(auto_now_add=True, null=True, blank=True)
-
-    def __str__(self):
-        return str(self.name) + '-' + str(self.code)
-
-
-# this employee data is what we are getting from zenoti
-class ZenotiEmployeesData(models.Model):
-    user = models.ForeignKey(
-        UserProfile, null=True, blank=True, on_delete=models.CASCADE
-    )
-    # zenoticenterId = models.CharField(max_length=100, null=True, blank=True)
-    employee_code = models.CharField(max_length=100, null=True, blank=True)
-    employee_id = models.CharField(max_length=100, null=True, blank=True)
-    employee_name = models.CharField(max_length=100, null=True, blank=True)
-    gender = models.CharField(max_length=500, null=True, blank=True)
-    job_info = models.CharField(max_length=500, null=True, blank=True)
-    zenoti_center = models.ManyToManyField(
-        ZenotiCentersData, blank=True)
-    added_date = models.DateTimeField(auto_now_add=True, null=True, blank=True)
-
-    def __str__(self):
-        return str(self.user)
-
-
-class AssociatedRoleOptions(models.Model):
-    option = models.CharField(max_length=100, null=True, blank=True)
-
-    def __str__(self):
-        return str(self.option)
-
-
 class WeekOffOptions(models.Model):
     option = models.CharField(max_length=100, null=True, blank=True)
 
@@ -139,6 +55,24 @@ class Position(models.Model):
         return str(self.name)
 
 
+# this center data is what we are getting from zenoti
+class ZenotiCentersData(models.Model):
+    zenoticenterId = models.CharField(max_length=100, null=True, blank=True)
+    code = models.CharField(max_length=100, null=True, blank=True)
+    name = models.CharField(max_length=100, null=True, blank=True)
+    display_name = models.CharField(max_length=100, null=True, blank=True)
+    address_1 = models.CharField(max_length=500, null=True, blank=True)
+    address_2 = models.CharField(max_length=500, null=True, blank=True)
+    city = models.CharField(max_length=100, null=True, blank=True)
+    zip_code = models.CharField(max_length=100, null=True, blank=True)
+    state = models.CharField(max_length=100, null=True, blank=True)
+    country = models.CharField(max_length=100, null=True, blank=True)
+    added_date = models.DateTimeField(auto_now_add=True, null=True, blank=True)
+
+    def __str__(self):
+        return str(self.name) + '-' + str(self.code)
+
+
 class ExtendedZenotiCenterData(models.Model):
     CENTRESTATUS = (
         ('Active', 'Active'),
@@ -157,6 +91,80 @@ class ExtendedZenotiCenterData(models.Model):
 
     def __str__(self):
         return str(self.zenoti_data.name)
+
+
+class UserProfile(models.Model):
+    ENTRANCE_TYPE = (
+        ('Zenoti', 'Zenoti'),
+        ('Non Zenoti', 'Non Zenoti')
+    )
+    USERSTATUS = (
+        ('Active', 'Active'),
+        ('InActive', 'InActive')
+    )
+    user = models.OneToOneField(
+        User, null=True, blank=True, on_delete=models.CASCADE
+    )
+    is_super_admin = models.BooleanField(default=False, null=True, blank=True)
+    is_audit_admin = models.BooleanField(default=False, null=True, blank=True)
+    profile_pic = models.ImageField(
+        default="profile1.jpg", null=True, blank=True)
+    phone = models.CharField(max_length=20, null=True, blank=True)
+    email = models.CharField(max_length=50, null=True, blank=True)
+    password = models.CharField(max_length=200, null=True, blank=True)
+    user_type = models.CharField(
+        max_length=100, blank=True, choices=ENTRANCE_TYPE)
+    user_type_name = models.ManyToManyField(UserTypes, blank=True)
+    user_status = models.CharField(
+        max_length=200, null=True, blank=True, choices=USERSTATUS)
+    roster_access = models.BooleanField(default=False, null=True, blank=True)
+    associated_center = models.ManyToManyField(
+        ExtendedZenotiCenterData, blank=True)
+    associated_role = models.ManyToManyField(
+        Position, blank=True)
+    office_start_time = models.TimeField(max_length=100, null=True, blank=True)
+    office_end_time = models.TimeField(max_length=100, null=True, blank=True)
+    week_off = models.ManyToManyField(WeekOffOptions, blank=True)
+    is_manager = models.BooleanField(default=False, null=True, blank=True)
+    date_of_joining = models.DateTimeField(
+        auto_now_add=True, null=True, blank=True)
+
+    def __str__(self):
+        return str(self.user)
+
+
+class SecretKeyModel(models.Model):
+    token = models.CharField(max_length=500, null=True, blank=True)
+
+    def __str__(self):
+        return str(self.token)
+
+# this employee data is what we are getting from zenoti
+
+
+class ZenotiEmployeesData(models.Model):
+    user = models.ForeignKey(
+        UserProfile, null=True, blank=True, on_delete=models.CASCADE
+    )
+    # zenoticenterId = models.CharField(max_length=100, null=True, blank=True)
+    employee_code = models.CharField(max_length=100, null=True, blank=True)
+    employee_id = models.CharField(max_length=100, null=True, blank=True)
+    employee_name = models.CharField(max_length=100, null=True, blank=True)
+    gender = models.CharField(max_length=500, null=True, blank=True)
+    job_info = models.CharField(max_length=500, null=True, blank=True)
+    zenoti_center = models.ManyToManyField(
+        ZenotiCentersData, blank=True)
+    added_date = models.DateTimeField(auto_now_add=True, null=True, blank=True)
+
+    def __str__(self):
+        return str(self.user)
+
+
+class AssociatedRoleOptions(models.Model):
+    option = models.CharField(max_length=100, null=True, blank=True)
+
+    def __str__(self):
+        return str(self.option)
 
 
 class ExtendedZenotiEmployeesData(models.Model):
@@ -178,14 +186,14 @@ class ExtendedZenotiEmployeesData(models.Model):
         return str(self.zenoti_data.user)
 
 
-class ExtendedZenotiEmployeesLeaveData(models.Model):
+class EmployeesLeaveData(models.Model):
     LEAVESTATUS = (
         ('Approved', 'Approved'),
         ('Pending', 'Pending'),
         ('Rejected', 'Rejected'),
     )
-    zenoti_data = models.ForeignKey(
-        ExtendedZenotiEmployeesData, null=True, blank=True, on_delete=models.CASCADE
+    user_profile = models.ForeignKey(
+        UserProfile, null=True, blank=True, on_delete=models.CASCADE
     )
     leave_from_date = models.DateField(null=True, blank=True)
     leave_to_date = models.DateField(null=True, blank=True)
@@ -195,7 +203,7 @@ class ExtendedZenotiEmployeesLeaveData(models.Model):
     added_date = models.DateTimeField(auto_now_add=True, null=True, blank=True)
 
     def __str__(self):
-        return str(self.zenoti_data.zenoti_data.user)
+        return str(self.user_profile.user)
 
 
 class EmployeeRoster(models.Model):
@@ -203,7 +211,7 @@ class EmployeeRoster(models.Model):
         ExtendedZenotiCenterData, null=True, blank=True, on_delete=models.CASCADE
     )
     employee = models.ForeignKey(
-        ExtendedZenotiEmployeesData, blank=True, null=True, on_delete=models.CASCADE)
+        UserProfile, blank=True, null=True, on_delete=models.CASCADE)
     associated_role = models.ForeignKey(
         Position, blank=True, null=True, on_delete=models.CASCADE)
     appoint_date = models.DateField(auto_now_add=False, null=True, blank=True)
@@ -244,7 +252,7 @@ class EmployeeScheduler(models.Model):
         ExtendedZenotiCenterData, null=True, blank=True, on_delete=models.CASCADE
     )
     employee = models.ForeignKey(
-        ExtendedZenotiEmployeesData, blank=True, null=True, on_delete=models.CASCADE)
+        UserProfile, blank=True, null=True, on_delete=models.CASCADE)
     associated_role = models.ManyToManyField(
         Position, blank=True)
     status = models.CharField(

@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import UserProfile, ZenotiCentersData, ZenotiEmployeesData, SecretKeyModel, ExtendedZenotiEmployeesData, AssociatedRoleOptions, WeekOffOptions, EmployeeRoster, ExtendedZenotiCenterData, ExtendedZenotiEmployeesLeaveData, EmployeeScheduler, OperationOption, SLRSalonAuditAccess, SectionOption, Position, UserTypes, SlrAudit, SlrDetail, SlrSalonImages, AuditAccess, MonthAudit, CentralAccess, AuditTypes
+from .models import UserProfile, ZenotiCentersData, ZenotiEmployeesData, SecretKeyModel, ExtendedZenotiEmployeesData, AssociatedRoleOptions, WeekOffOptions, EmployeeRoster, ExtendedZenotiCenterData, EmployeesLeaveData, EmployeeScheduler, OperationOption, SLRSalonAuditAccess, SectionOption, Position, UserTypes, SlrAudit, SlrDetail, SlrSalonImages, AuditAccess, MonthAudit, CentralAccess, AuditTypes
 # Register your models here.
 admin.site.register(UserProfile)
 admin.site.register(ZenotiCentersData)
@@ -10,7 +10,7 @@ admin.site.register(AssociatedRoleOptions)
 admin.site.register(WeekOffOptions)
 admin.site.register(EmployeeRoster)
 admin.site.register(ExtendedZenotiCenterData)
-admin.site.register(ExtendedZenotiEmployeesLeaveData)
+admin.site.register(EmployeesLeaveData)
 admin.site.register(EmployeeScheduler)
 admin.site.register(OperationOption)
 admin.site.register(SectionOption)

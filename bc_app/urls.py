@@ -1,5 +1,5 @@
 from django.urls import path
-from .views import login_page, admin_page, logout_user, zenotiUsers_page, staff_page, other_user_page, admin_employee_profile_page, edit_user_modal_popup, slr_audit_overview, slr_audit_detail, edit_slr_audit, edit_slr_salon_profile, edit_slr_salon_action_required, edit_slr_salon_extra_data, edit_slr_salon_reviewed_data, edit_slr_salon_status_dropdown, admin_zenotiCenter_page, slr_audit_access, edit_slr_access_popup, admin_team_list_page, edit_admin_modal_popup, central_access_page, edit_central_access_popup, sent_selected_user_list_to_frontend, save_selected_user_responsible, sent_all_user_list_and_compliance_to_frontend, delete_user_response
+from .views import login_page, admin_page, logout_user, zenotiUsers_page, staff_page, employee_profile_page, edit_user_modal_popup, slr_audit_overview, slr_audit_detail, edit_slr_audit, edit_slr_salon_profile, edit_slr_salon_action_required, edit_slr_salon_extra_data, edit_slr_salon_reviewed_data, edit_slr_salon_status_dropdown, admin_zenotiCenter_page, slr_audit_access, edit_slr_access_popup, admin_team_list_page, edit_admin_modal_popup, central_access_page, edit_central_access_popup, sent_selected_user_list_to_frontend, save_selected_user_responsible, sent_all_user_list_and_compliance_to_frontend, delete_user_response, stafflist_page
 urlpatterns = [
     path('user_login/', login_page, name='user_login'),
     path('user_logout/', logout_user, name='user_logout'),
@@ -12,11 +12,11 @@ urlpatterns = [
          name='admin_team_list_page'),
     path('edit_admin_modal_popup/', edit_admin_modal_popup,
          name='edit_admin_modal_popup'),
-    path('other_staffs_list/', other_user_page,
-         name='other_staffs_list'),
+    path('staff_lists/', stafflist_page,
+         name='staff_lists'),
     path('edit_user_modal_popup/', edit_user_modal_popup,
          name='edit_user_modal_popup'),
-    path('body_craft_staff_profile/<str:pk>/', admin_employee_profile_page,
+    path('body_craft_staff_profile/<str:pk>/', employee_profile_page,
          name='body_craft_staff_profile'),
     path('central_audit_access/', central_access_page,
          name='central_audit_access'),

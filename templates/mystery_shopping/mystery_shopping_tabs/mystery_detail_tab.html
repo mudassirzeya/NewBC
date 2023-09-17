@@ -118,7 +118,7 @@
 </div>
 <div class="row p-4">
     <div class="table-responsive" id="table-container" style="height: 100%">
-        <div> 
+        <div id="top_paginator_div"> 
             {% if detail_page_query.paginator.num_pages > 1 %} 
             <!-- Paginator -->
             <nav aria-label="Page navigation example">
@@ -249,7 +249,7 @@
                             <select class="form-control p-0 compliance_input" name="atr_complience" id="complience_{{each_detail.user_resp_id}}" onchange="edit_extra_mystery_data(this, '{{each_detail.user_resp_id}}')">
                                 <option value="">Select</option> 
                                 {% for compliance in each_detail.compliance_dropdown|split:"," %} 
-                                <option {% if each_detail.compliance|get_sanitize_name == compliance %} selected {% endif %} value="{{compliance}}">{{compliance}}</option> 
+                                <option {% if each_detail.compliance == compliance|get_sanitize_name %} selected {% endif %} value="{{compliance}}">{{compliance}}</option> 
                                 {% endfor %}
                             </select>
                             {% if each_detail.compliance_category %} 
@@ -400,63 +400,9 @@
             </tbody>
         </table>
 
-        <div> 
-            {% if detail_page_query.paginator.num_pages > 1 %} 
-            <!-- Paginator -->
-            <nav aria-label="Page navigation example">
-                <ul class="pagination justify-content-center">
-                    <li class="page-item {% if not detail_page_query.has_previous %} disabled {% endif %}">
-                        <a class="page-link" href="?page_2=1{% for key, values in request.GET.lists %}{% if key != 'page_2' %}{% for value in values %}&{{ key }}={{ value }}{% endfor %}{% endif %}{% endfor %}" tabindex="-1">FIRST</a>
-                    </li>
-                    <li class="page-item {% if not detail_page_query.has_previous %} disabled {% endif %}">
-                        <a class="page-link" href="{% if detail_page_query.has_previous %}?page_2={{ detail_page_query.previous_page_number }}{% for key, values in request.GET.lists %}{% if key != 'page_2' %}{% for value in values %}&{{ key }}={{ value }}{% endfor %}{% endif %}{% endfor %} {% endif %}" tabindex="-1"> &laquo;</a>
-                    </li> {% if detail_page_query.number|add:'-4' > 1 %} <li class="page-item disabled">
-                        <a class="page-link" href="?page_2={{ detail_page_query.number|add:'-5' }}{% for key, values in request.GET.lists %}{% if key != 'page_2' %}{% for value in values %}&{{ key }}={{ value }}{% endfor %}{% endif %}{% endfor %}">&hellip;</a>
-                    </li> {% endif %} {% for i in detail_page_query.paginator.page_range %} {% if detail_page_query.number == i %} <li class="active page-item current">
-                        <a class="page-link" href="?page_2={{ i }}{% for key, values in request.GET.lists %}{% if key != 'page_2' %}{% for value in values %}&{{ key }}={{ value }}{% endfor %}{% endif %}{% endfor %}">{{ i }}</a>
-                    </li> {% elif i > detail_page_query.number|add:'-5' and i < detail_page_query.number|add:'5' %} <li class="page-item">
-                        <a class="page-link" href="?page_2={{ i }}{% for key, values in request.GET.lists %}{% if key != 'page_2' %}{% for value in values %}&{{ key }}={{ value }}{% endfor %}{% endif %}{% endfor %}">{{ i }}</a>
-                        </li> {% endif %} {% endfor %} {% if detail_page_query.paginator.num_pages > detail_page_query.number|add:'4' %} <li class="page-item disabled">
-                            <a class="page-link" href="?page_2={{ detail_page_query.number|add:'5' }}{% for key, values in request.GET.lists %}{% if key != 'page_2' %}{% for value in values %}&{{ key }}={{ value }}{% endfor %}{% endif %}{% endfor %}">&hellip;</a>
-                        </li> {% endif %} <li class="page-item {% if not detail_page_query.has_next %} disabled {% endif %}">
-                            <a class="page-link" href="{% if detail_page_query.has_next %} ?page_2={{ detail_page_query.next_page_number }}{% for key, values in request.GET.lists %}{% if key != 'page_2' %}{% for value in values %}&{{ key }}={{ value }}{% endfor %}{% endif %}{% endfor %} {% endif %}">&raquo;</a>
-                        </li>
-                        <li class="page-item {% if not detail_page_query.has_next %} disabled {% endif %}">
-                            <a class="page-link" href="{% if detail_page_query.has_next %} ?page_2={{ detail_page_query.paginator.num_pages }}{% for key, values in request.GET.lists %}{% if key != 'page_2' %}{% for value in values %}&{{ key }}={{ value }}{% endfor %}{% endif %}{% endfor %} {% endif %}">LAST</a>
-                        </li>
-                </ul>
-            </nav> 
-            {% endif %}
+        <div id="bottom_paginator_div"> 
+            <!-- handled by js  -->
         </div>
-
-        <!-- <div> 
-            {% if all_mystery_detail.paginator.num_pages > 1%} 
-            <nav aria-label="Page navigation example">
-                <ul class="pagination justify-content-center">
-                    <li class="page-item {% if not all_mystery_detail.has_previous %} disabled {% endif %}">
-                        <a class="page-link" href="?page_2=1{% for key,value in request.GET.items %}{% if key != 'page_2' %}&{{ key }}={{ value }}{% endif %}{% endfor %}" tabindex="-1">FIRST</a>
-                    </li>
-                    <li class="page-item {% if not all_mystery_detail.has_previous %} disabled {% endif %}">
-                        <a class="page-link" href="{% if all_mystery_detail.has_previous %}?page_2={{ all_mystery_detail.previous_page_number }}{% for key,value in request.GET.items %}{% if key != 'page_2' %}&{{ key }}={{ value }}{% endif %}{% endfor %} {% endif %} " tabindex="-1">
-                            &laquo;</a>
-                    </li> {% if all_mystery_detail.number|add:'-4' > 1 %} <li class="page-item disabled">
-                        <a class="page-link" href="?page_2={{ all_mystery_detail.number|add:'-5' }}{% for key,value in request.GET.items %}{% if key != 'page_2' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">&hellip;</a>
-                    </li> {% endif %} {% for i in all_mystery_detail.paginator.page_range %} {% if all_mystery_detail.number == i %} <li class="active page-item current ">
-                        <a class="page-link" href="?page_2={{ i }}{% for key,value in request.GET.items %}{% if key != 'page_2' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">{{ i }}</a>
-                    </li> {% elif i > all_mystery_detail.number|add:'-5' and i < all_mystery_detail.number|add:'5' %} <li class="page-item">
-                        <a class="page-link" href="?page_2={{ i }}{% for key,value in request.GET.items %}{% if key != 'page_2' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">{{ i }}</a>
-                        </li> {% endif %} {% endfor %} {% if all_mystery_detail.paginator.num_pages > all_mystery_detail.number|add:'4' %} <li class="page-item disabled">
-                            <a class="page-link" href="?page_2={{ all_mystery_detail.number|add:'5' }}{% for key,value in request.GET.items %}{% if key != 'page_2' %}&{{ key }}={{ value }}{% endif %}{% endfor %}">&hellip;</a>
-                        </li> {% endif %} <li class="page-item {% if not all_mystery_detail.has_next %} disabled {% endif %}">
-                            <a class="page-link" href="{% if all_mystery_detail.has_next %} ?page_2={{ all_mystery_detail.next_page_number }}{% for key,value in request.GET.items %}{% if key != 'page_2' %}&{{ key }}={{ value }}{% endif %}{% endfor %} {% endif %}">&raquo;</a>
-                        </li>
-                        <li class="page-item {% if not all_mystery_detail.has_next %} disabled {% endif %}">
-                            <a class="page-link" href="{% if all_mystery_detail.has_next %} ?page_2={{ all_mystery_detail.paginator.num_pages }}{% for key,value in request.GET.items %}{% if key != 'page_2' %}&{{ key }}={{ value }}{% endif %}{% endfor %} {% endif %}">LAST</a>
-                        </li>
-                </ul>
-            </nav> 
-            {% endif %}
-        </div> -->
     </div>
 </div>
 
@@ -469,6 +415,9 @@
             console.log('yes')
             disable_input_elements(class_list)
         }
+
+        var top_paginator = document.getElementById('top_paginator_div').innerHTML;
+        document.getElementById('bottom_paginator_div').innerHTML = top_paginator;
     });
 </script>
 
@@ -755,50 +704,51 @@
             });
     }
 
-    var all_users = {{ all_therapy_ext_emp|safe}}
+    var all_users = {{ all_employee_list|safe }};
     function get_user_list_and_make_userresposible_dropdown(t) {
-            var ms_id_split = t.id.split('_');
-            var ms_id = ms_id_split.pop();
-            $('#cover-spin').show(0);
-            fetch("/sent_selected_user_list_to_frontend/", {
-                method: "POST",
-                body: JSON.stringify({
-                    'audit_id': ms_id,
-                    'audit_name': 'Mystery Shopping',
-                }),
-                // Adding headers to the request
-                headers: {
-                    "Content-type": "application/json",
-                    "X-CSRFToken": "{{ csrf_token }}",
-                },
+        var ms_id_split = t.id.split('_');
+        var ms_id = ms_id_split.pop();
+        console.log('yes')
+        $('#cover-spin').show(0);
+        fetch("/sent_selected_user_list_to_frontend/", {
+            method: "POST",
+            body: JSON.stringify({
+                'audit_id': ms_id,
+                'audit_name': 'Mystery Shopping',
+            }),
+            // Adding headers to the request
+            headers: {
+                "Content-type": "application/json",
+                "X-CSRFToken": "{{ csrf_token }}",
+            },
+        })
+            .then((response) => {
+                // console.log(response);
+                if (response.redirected) {
+                    window.location.href = response.url;
+                    return;
+                }
+                return response.json();
             })
-                .then((response) => {
-                    // console.log(response);
-                    if (response.redirected) {
-                        window.location.href = response.url;
-                        return;
-                    }
-                    return response.json();
-                })
-                .then((data) => {
-                    // console.log("Success: ", data);
-                    var selected_user_list = data.user_json;
-                    // var user_list = [7,8,9,10]
-                    if (data.msg == 'success') {
-                        $('#cover-spin').hide(0);
-                        var dropDownId = 'person_responsible_dropdown_' + ms_id;
-                        create_dropdown(dropDownId, dropDownId, all_users, selected_user_list, 'single');
-                        var EditBtn = document.getElementById("edit_person_responsible_btn_" + ms_id);
-                        var saveBtn = document.getElementById("save_person_responsible_btn_" + ms_id);
-                        EditBtn.classList.add("d-none");
-                        saveBtn.classList.remove("d-none");
-                        saveBtn.classList.add("btn-link");
-                    }
-                    else {
-                        $('#cover-spin').hide(0);
-                        alert('Something went wrong, Please try again after refreshing the page')
-                    }
-                });
+            .then((data) => {
+                // console.log("Success: ", data);
+                var selected_user_list = data.user_json;
+                // var user_list = [7,8,9,10]
+                if (data.msg == 'success') {
+                    $('#cover-spin').hide(0);
+                    var dropDownId = 'person_responsible_dropdown_' + ms_id;
+                    create_dropdown(dropDownId, dropDownId, all_users, selected_user_list, 'single');
+                    var EditBtn = document.getElementById("edit_person_responsible_btn_" + ms_id);
+                    var saveBtn = document.getElementById("save_person_responsible_btn_" + ms_id);
+                    EditBtn.classList.add("d-none");
+                    saveBtn.classList.remove("d-none");
+                    saveBtn.classList.add("btn-link");
+                }
+                else {
+                    $('#cover-spin').hide(0);
+                    alert('Something went wrong, Please try again after refreshing the page')
+                }
+            });
         }
 
 

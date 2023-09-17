@@ -22,26 +22,7 @@
             </div>
             <div class="col">
                 <div class="form-group">
-                    <select class="form-control" name="select_jobtitle">
-                        <option value="">Search from Job Title</option>
-                        {% for job in all_jobtitle %}
-                        <option {% if selected_jobtitle == job %} selected {% endif %} value="{{job}}">{{job}}</option>
-                        {% endfor %}
-                        
-                    </select>
-                </div>
-            </div>
-            <div class="col">
-                <div class="form-group">
-                    <select class="form-control" name="select_is_manager">
-                        <option value="">User Type</option> 
-                        <option {% if select_is_manager == 'Outlet Manager' %} selected {% endif %} value="Outlet Manager">Outlet Manager</option> 
-                    </select>
-                </div>
-            </div>
-            <div class="col">
-                <div class="form-group">
-                    <input type="text" class="form-control" name="searched_text" placeholder="search here" {% if searched_text %} value="{{searched_text}}" {% endif %}>
+                    <input class="form-control" placeholder="Search.." type="text" name="searched_text" value="{{searched_text|default_if_none:''}}">
                 </div>
             </div>
             <div class="col">
@@ -51,7 +32,7 @@
                         Search
                     </button>
                     &nbsp;&nbsp;
-                    <a href="{% url 'zenoti_staffs_list' %}" class="btn btn-danger btn-sm mb-2"
+                    <a href="{% url 'staff_lists' %}" class="btn btn-danger btn-sm mb-2"
                         style="font-size: 15px;">
                         Reset Filter
                     </a>
@@ -66,52 +47,57 @@
         <input type="hidden" name="user_download_csv" id="">
         <button class="btn btn-info" type="submit" onclick="startDownload(this)"><i class="fas fa-download"></i></button>
     </form> &nbsp; &nbsp;
-    <button class="btn btn-warning text-white" data-toggle="modal" data-target="#add_user_modal">
-        <i class="fas fa-plus"></i> Fetch Zenoti Users</button>
+    <button class="btn btn-info text-white" data-toggle="modal" data-target="#add_user_modal">
+        <i class="fas fa-plus"></i> Add New User 
+    </button>
 </div>
 <div class="row">
     <div class="col-md-12">
         <div class="card">
-            <!-- <div class="card-body">
-                <h5 class="card-title text-uppercase mb-0">Manage Users</h5>
-            </div> -->
             <div class="table-responsive">
                 <table class="table no-wrap user-table mb-0">
                     <thead>
                         <tr>
-                            <th scope="col" class="border-0 text-uppercase font-medium pl-4">#</th>
+                            <th scope="col" class="border-0 text-uppercase font-medium">#</th>
                             <th scope="col" class="border-0 text-uppercase font-medium">Name</th>
-                            <th scope="col" class="border-0 text-uppercase font-medium">Code</th>
                             <th scope="col" class="border-0 text-uppercase font-medium">Assigned Centers</th>
+                            <th scope="col" class="border-0 text-uppercase font-medium">Username</th>
+                            <th></th>
                         </tr>
                     </thead>
                     <tbody>
                     {% for employee in employee_list %}
-                    <tr onclick="viewEmployeeDetail('{{employee.id}}')" style="cursor: pointer;">
+                    <tr>
                         <td class="pl-4">{{forloop.counter}}</td>
-                        <td>
+                        <td onclick="viewEmployeeDetail('{{employee.id}}')" style="cursor: pointer;">
                             <div class="d-flex align-items-start">
-                                {% if employee.gender == '0' %}
-                                <img src="{% static 'images/women.png' %}" class="rounded-circle" width="30">
-                                {% else %}
                                 <img src="{% static 'images/men.png' %}" class="rounded-circle" width="30">
-                                {% endif %}
                                 <div class="ml-2">
                                     <h5 class="font-weight-medium mb-0">
-                                        {{employee.name}}
+                                        {{employee.user.first_name|default_if_none:'' }} {{employee.user.last_name|default_if_none:'' }}
                                     </h5>
-                                    <span class="text-muted">{{employee.username}}</span>
+                                    <span class="text-muted">{{employee.user.username|default_if_none:''}}</span>
                                 </div>
                             </div>
-                            <!-- <h5 class="font-medium mb-0">{{employee.name}}</h5>
-                            <span class="text-muted">{{employee.username}}</span> -->
                         </td>
                         <td>
-                            <span class="text-muted">{{employee.employee_code}}</span><br>
-                            <span class="text-muted">{{employee.job}}</span>
+                            <span class="text-muted">
+                                {% if employee.associated_center.all|length > 3 %}
+                                    <span class="text-muted" data-toggle="tooltip" title="{% for each_center in employee.associated_center.all %} {{each_center.zenoti_data.name|default_if_none:'' }} {% if not forloop.last %},{% endif %}
+                                    {% endfor %}">{{ employee.associated_center.all|length }} Assigned Center</span> 
+                                {% else %}
+                                    {% for each_center in employee.associated_center.all %}
+                                        {{each_center.zenoti_data.name|default_if_none:'' }}
+                                        {% if not forloop.last %},{% endif %}
+                                    {% endfor %}
+                                {% endif %}
+                            </span>
                         </td>
                         <td>
-                            <span class="text-muted" data-toggle="tooltip" title="{{employee.assigned_center}}">{{employee.assigned_center|striptags|truncatechars:50}}</span>
+                            {{employee.user.username|default_if_none:''}}
+                        </td>
+                        <td>
+                            <button class="btn btn-danger" onclick="delete_confirmation_show('{{employee.id}}')"><i class="fas fa-trash"></i></button>
                         </td>
                     </tr>
                     {% endfor %}
@@ -121,34 +107,6 @@
         </div>
     </div>
 </div>
-
-
-
-
-<!-- <div class="table-responsive">
-    <table class="table table-hover table-bordered" id="file_export">
-        <thead>
-            <tr>
-                <th>Employee Code</th>
-                <th>Employee Name</th>
-                <th>Zenoti Center</th>
-                <th>Assigned Center</th>
-                <th>Job Info</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for employee in employee_list %}
-            <tr onclick="viewEmployeeDetail('{{employee.id}}')" style="cursor: pointer;">
-                <td>{{employee.employee_code}}</td>
-                <td>{{employee.name}}</td>
-                <td data-toggle="tooltip" title="{{employee.zenoti_center}}"> {{employee.zenoti_center|striptags|truncatechars:100}}</td>
-                <td data-toggle="tooltip" title="{{employee.assigned_center}}">{{employee.assigned_center|striptags|truncatechars:100}}</td>
-                <td>{{employee.job}}</td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
-</div> -->
 <div>
     {% if employee_list.paginator.num_pages > 1%}
     <!-- Paginator -->
@@ -175,30 +133,36 @@
                 </li>
         </ul>
     </nav>
-    
     {% endif %}
 </div>
 
-<!-- get zenoti modal  -->
-<div class="modal fade" id="add_user_modal" tabindex="-1" role="dialog" aria-labelledby="exampleModalCenterTitle"
-    aria-hidden="true">
+<!-- add user modal  -->
+<div class="modal fade" id="add_user_modal" role="dialog" aria-labelledby="exampleModalCenterTitle" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered" role="document">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title text-info" id="exampleModalLongTitle">Fetch Zenoti Users Data
-                </h5>
+                <h5 class="modal-title text-info" id="exampleModalLongTitle">Add New Audit User </h5>
                 <button type="button" class="close" data-dismiss="modal" aria-label="Close">
                     <span aria-hidden="true">&times;</span>
                 </button>
             </div>
             <div class="modal-body">
-                <form method="POST" action="" id="get_zenoti_user_data">
+                <form method="POST" id="form_id"> 
                     {% csrf_token %}
-                    <h3 class="text-danger">Are you sure, You want to fetch new data from Zenoti ?</h3>
-                    <!-- <div class="form-group mb-4">
-                        <label class="mr-sm-2" for="inlineFormCustomSelect">Name</label>
-                        <input type="text" class="form-control" placeholder="name.." name="name" id="" required>
-                    </div>
+                    <div class="row">
+                        <div class="col">
+                            <div class="form-group mb-4">
+                                <label class="mr-sm-2" for="inlineFormCustomSelect">First Name</label>
+                                <input type="text" class="form-control" placeholder="name.." name="first_name" id="" required>
+                            </div>
+                        </div>
+                        <div class="col">
+                            <div class="form-group mb-4">
+                                <label class="mr-sm-2" for="inlineFormCustomSelect">Last Name</label>
+                                <input type="text" class="form-control" placeholder="name.." name="last_name" id="" required>
+                            </div>
+                        </div>
+                    </div> 
                     <div class="form-group mb-4">
                         <label class="mr-sm-2" for="inlineFormCustomSelect">phone</label>
                         <input type="number" class="form-control" placeholder="" name="phone" id="" required>
@@ -210,9 +174,37 @@
                     <div class="form-group mb-4">
                         <label class="mr-sm-2" for="inlineFormCustomSelect">Passcode</label>
                         <input type="text" class="form-control" placeholder="password.." name="passcode" id="" required>
-                    </div> -->
+                    </div>
+                    <input type="hidden" name="add_new_user" id="">
                     <div class="d-flex justify-content-center">
-                        <button class="btn btn-success" type="submit" onclick="button_click(this, 'get_zenoti_user_data')">Yes</button>
+                        <button class="btn btn-success" type="submit" onclick="this.form.submit(); this.disabled=true; this.innerHTML='Sending…';">Add User</button>
+                    </div>
+                </form>
+            </div>
+            <!-- <div class="modal-footer">
+                <button type="button" class="btn btn-danger" data-dismiss="modal">Close</button>
+            </div> -->
+        </div>
+    </div>
+</div>
+
+<!-- delete user modal  -->
+<div class="modal fade" id="delete_user_modal" role="dialog" aria-labelledby="exampleModalCenterTitle" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title text-info" id="exampleModalLongTitle">Delete User </h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <form method="POST" id=""> 
+                    {% csrf_token %} 
+                    <input type="hidden" name="delete_main_user" id="delete_main_user_id">
+                    <h3 class="text-danger">Are You Sure, You Want To Delete This User ?</h3>
+                    <div class="d-flex justify-content-center">
+                        <button class="btn btn-success" type="submit" onclick="this.form.submit(); this.disabled=true; this.innerHTML='Please Wait…';">Yes</button>
                     </div>
                 </form>
             </div>
@@ -223,6 +215,30 @@
     </div>
 </div>
 <script>
+    $(document).ready(function () {
+        $('#add_user_type').select2({
+            dropdownAutoWidth: true,
+            multiple: true,
+            width: '100%',
+            height: '30px',
+            placeholder: "Select",
+            allowClear: true,
+            // dropdownParent: $('#extra_data_div')
+        });
+    });
+
+    $(document).ready(function () {
+        $('#edit_user_type').select2({
+            dropdownAutoWidth: true,
+            multiple: true,
+            width: '100%',
+            height: '30px',
+            placeholder: "Select",
+            allowClear: true,
+            // dropdownParent: $('#extra_data_div')
+        });
+    });
+
     function viewEmployeeDetail(employee_id) {
             window.location.href = `/body_craft_staff_profile/${employee_id}/`;
             return false;
@@ -233,6 +249,12 @@
         setTimeout(function () {
             button.innerHTML = '<i class="fas fa-download"></i>';
         }, 10000); // Change the timeout value as per your requirement
+    }
+
+    function delete_confirmation_show(t) {
+        var del_id_input_box = document.getElementById('delete_main_user_id');
+        del_id_input_box.value = t;
+        $('#delete_user_modal').modal('show');
     }
 </script>
 {% endblock %}

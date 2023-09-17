@@ -214,183 +214,125 @@
         var side_navbar = document.getElementById('side_bar_id');
         side_navbar.classList.add('d-none');
     }
-    var all_users = {{ all_therapy_ext_emp|safe }}
+    // var all_users = {{ all_therapy_ext_emp|safe }}
 
-    function get_user_list_and_make_userresposible_dropdown(t, if_new) {
-            var ms_id = t
-            // var ms_id = ms_id_split.pop();
-            $('#cover-spin').show(0);
-            fetch("/sent_selected_user_list_to_frontend/", {
-                method: "POST",
-                body: JSON.stringify({
-                    'audit_id': ms_id,
-                    'audit_name': 'Mystery Shopping',
-                }),
-                // Adding headers to the request
-                headers: {
-                    "Content-type": "application/json",
-                    "X-CSRFToken": "{{ csrf_token }}",
-                },
-            })
-                .then((response) => {
-                    // console.log(response);
-                    if (response.redirected) {
-                        window.location.href = response.url;
-                        return;
-                    }
-                    return response.json();
-                })
-                .then((data) => {
-                    // console.log("Success: ", data);
-                    var selected_user = data.user_json;
-                    var selected_compliance = data.selected_compliance;
-                    var remark_text = data.remark;
-                    // var user_list = [7,8,9,10]
-                    if (data.msg == 'success') {
-                        $('#cover-spin').hide(0);
-                        var dropDownId = 'person_responsible_dropdown__'+ms_id;
-                        // console.log('all_user', all_users, dropDownId, user_list)
-                        // create_dropdown(dropDownId, dropDownId, all_users, selected_user, 'single');
-                        if(if_new == 'Old'){
-                            create_dropdown(`person_responsible_dropdown__${ms_id}`, `person_responsible_dropdown__${ms_id}`, all_users, selected_user, 'single')
-                            create_dropdown(`compliance_dropdown__${ms_id}`, `compliance_dropdown__${ms_id}`, data.all_compliance_list, selected_compliance, 'single')
-                            document.getElementById('auditor_remark__' + ms_id).innerHTML = `<textarea class="form-control" id="remark__${ms_id}" rows="3">${remark_text}</textarea><span class="text-danger" id="remark_error__${ms_id}"></span>`;
-                            var EditBtn = document.getElementById("edit_person_responsible_btn__" + ms_id);
-                            var editiconElement = EditBtn.querySelector("i");
-                            editiconElement.classList.remove("fa-edit");
-                            editiconElement.classList.add("fa-check");
-                            EditBtn.onclick = function () {
-                                save_user_responsible_and_remove_userresposible_dropdown(this, 'Old');
-                            }
-                        }else{
-                            create_dropdown(`person_responsible_dropdown__${if_new}`, `person_responsible_dropdown__${if_new}`, all_users, selected_user, 'single')
-                            create_dropdown(`compliance_dropdown__${if_new}`, `compliance_dropdown__${if_new}`, data.all_compliance_list, selected_compliance, 'single')
-                            document.getElementById('auditor_remark__' + if_new).innerHTML = `<textarea class="form-control" id="remark__${if_new}" rows="3">${remark_text}</textarea><span class="text-danger" id="remark_error__${if_new}"></span>`;
-                            var EditBtn = document.getElementById("edit_person_responsible_btn__" + if_new);
-                            EditBtn.name = "edit_person_responsible_btn__"+ms_id;
-                            var editiconElement = EditBtn.querySelector("i");
-                            editiconElement.classList.remove("fa-edit");
-                            editiconElement.classList.add("fa-check");
-                            EditBtn.onclick = function () {
-                                save_user_responsible_and_remove_userresposible_dropdown(this, 'Old-New');
-                            }
-                        }
-                    }
-                    else {
-                        $('#cover-spin').hide(0);
-                        alert('Something went wrong, Please try again after refreshing the page')
-                    }
-                });
-        }
-    
-    function save_user_responsible_and_remove_userresposible_dropdown(t, status) {
+    function save_user_responsible_and_remove_userresposible_dropdown(user_resp_row_id, mystery_checklist_id, status) {
         var ms_id = t.id.split('__')[1];
         console.log("id:", ms_id, status)
-        var checklist_id = 0;
-        if(status == 'New'){
-            checklist_id = t.name.split('__')[1];
-        }
+        var checklist_id = t.name.split('__')[1];
+        
         var selected_user = document.getElementById('person_responsible_dropdown__'+ms_id).value;
         var selected_compliance = document.getElementById('compliance_dropdown__'+ms_id).value;
         var get_remark = document.getElementById('remark__'+ms_id).value;
+        var get_kra = document.getElementById('kra_dropdown__'+ms_id).value;
+
+
+        console.log("id2:", selected_user, selected_compliance, get_remark, get_kra)
         var compliance_list = ["Partially followed", "Couldn't follow", "Not aware", "Not followed", "Like", "Partially Like", "Dislike", "1", "2", "3", "4", "5", "Yes", "No", "May be", "Couldnt follow"];
-        var total_error = 0;
+
+        if(selected_compliance.length == 0){
+            alert('Please select Compliance');
+            return;
+        }
+        if (selected_user.length == 0) {
+            alert('Please select User');
+            return;
+        }
         if (compliance_list.indexOf(selected_compliance) !== -1) {
             if (get_remark.length > 1) {
                 document.getElementById('remark_error__'+ms_id).innerHTML = '';
-                total_error = 0;
             }
             else {
                 document.getElementById('remark_error__'+ms_id).innerHTML = 'Please write the Remarks';
-                total_error = total_error + 1;
+                return;
             }
-        } else {
-            total_error = 0;
         }
-        if (selected_user.length > 0 && selected_compliance.length){
-            if(total_error == 0){
-                $('#cover-spin').show(0);
-                if (status == 'Old-New') {
-                    ms_id = t.name.split('__')[1];
-                }
-                fetch("/save_selected_user_responsible/", {
-                    method: "POST",
-                    body: JSON.stringify({
-                        'audit_id': ms_id,
-                        'audit_name': 'Mystery Shopping',
-                        'selected_user': selected_user,
-                        'selected_compliance': selected_compliance,
-                        'status':status,
-                        'checklist_id': checklist_id,
-                        'get_remark': get_remark
-                    }),
-                    // Adding headers to the request
-                    headers: {
-                        "Content-type": "application/json",
-                        "X-CSRFToken": "{{ csrf_token }}",
-                    },
-                })
-                    .then((response) => {
-                        // console.log(response);
-                        if (response.redirected) {
-                            window.location.href = response.url;
-                            return;
-                        }
-                        return response.json();
-                    })
-                    .then((data) => {
-                        // console.log("Success: ", data);
-                        var selected_user = data.user_json;
-                        var selected_compliance = data.compliance;
-                        var remark_text = data.get_remark;
-                        // var user_list = [7,8,9,10]
-                        if (data.msg == 'success') {
-                            if (status == 'Old-New') {
-                                ms_id = t.id.split('__')[1];
-                            }
-                            $('#cover-spin').hide(0);
-                            var delBtn = document.getElementById("remove_person_responsible_row__" + ms_id);
-                            var saveBtn = document.getElementById("edit_person_responsible_btn__" + ms_id);
-                            try {
-                                $('#person_responsible_dropdown__' + ms_id).multiselect('destroy');
-                                $('#compliance_dropdown__' + ms_id).multiselect('destroy');
-                            } catch (e) { }
-                            var userRespdropdownId = document.getElementById('person_responsible_dropdown__'+ms_id);
-                            var compliancepdropdownId = document.getElementById('compliance_dropdown__' + ms_id);
-                            var remarkText = document.getElementById('auditor_remark__' + ms_id);
-                            // delBtn.classList.remove("d-none");
-                            
-                            delBtn.onclick = function(){
-                                delete_user_response(this, data.user_resp_query_id);   
-                            }
-                            
-                            var editiconElement = saveBtn.querySelector("i");
-                            editiconElement.classList.remove("fa-trash-check");
-                            editiconElement.classList.add("fa-edit");
-                            saveBtn.onclick = function(){
-                                get_user_list_and_make_userresposible_dropdown(data.user_resp_query_id, ms_id);
-                            }
-                           
-                            var html_1 = `<span id="person_responsible_dropdown__${ms_id}">${selected_user.name}</span>`;
-                            userRespdropdownId.outerHTML = html_1;
-    
-                            var html_2 = `<span id="compliance_dropdown__${ms_id}">${selected_compliance}</span>`;
-                            compliancepdropdownId.outerHTML = html_2;
-    
-                            var html_3 = `<span id="auditor_remark__${ms_id}">${remark_text}</span>`;
-                            remarkText.outerHTML = html_3;
-                        
-                        }
-                        else {
-                            $('#cover-spin').hide(0);
-                            alert('Something went wrong, Please try again after refreshing the page')
-                        }
-                    });
-            }
+        $('#cover-spin').show(0);
+        // if (status == 'Old') {
+        //     ms_id = t.name.split('__')[1];
+        // }
 
-        }else{
-            alert("Kindly Complete Both 'Input Person Responsible' and 'Compliance' Fields")
+        var response = {
+            'audit_id':ms_id,
+            'audit_name': 'Mystery Shopping',
+            'selected_user': selected_user,
+            'selected_compliance': selected_compliance,
+            'status': status,
+            'checklist_id': checklist_id,
+            'get_remark': get_remark,
+            'get_kra': get_kra
         }
+
+    
+        fetch("/save_selected_user_responsible/", {
+            method: "POST",
+            body: JSON.stringify(response),
+            // Adding headers to the request
+            headers: {
+                "Content-type": "application/json",
+                "X-CSRFToken": "{{ csrf_token }}",
+            },
+        })
+            .then((response) => {
+                // console.log(response);
+                if (response.redirected) {
+                    window.location.href = response.url;
+                    return;
+                }
+                return response.json();
+            })
+            .then((data) => {
+                // console.log("Success: ", data);
+                var selected_user = data.user_json;
+                var selected_compliance = data.compliance;
+                var remark_text = data.get_remark;
+                var selected_kra = data.get_kra;
+                // var user_list = [7,8,9,10]
+                if (data.msg == 'success') {
+                    // if (status == 'Old-New') {
+                    //     ms_id = t.id.split('__')[1];
+                    // }
+                    $('#cover-spin').hide(0);
+                    var delBtn = document.getElementById("remove_person_responsible_row__" + ms_id);
+                    delBtn.id = 'remove_person_responsible_row__'+ data.user_resp_query_id;
+                    var saveBtn = document.getElementById("edit_person_responsible_btn__" + ms_id);
+                    saveBtn.id = 'edit_person_responsible_btn__' + data.user_resp_query_id;
+                    var userRespdropdownId = document.getElementById('person_responsible_dropdown__'+ms_id);
+                    userRespdropdownId.id = 'person_responsible_dropdown__'+ data.user_resp_query_id;
+                    var compliancepdropdownId = document.getElementById('compliance_dropdown__' + ms_id);
+                    compliancepdropdownId.id = 'compliance_dropdown__'+ data.user_resp_query_id;
+                    var remarkText = document.getElementById('remark__' + ms_id);
+                    remarkText.id = 'remark__'+ data.user_resp_query_id;
+                    var kradropdownId = document.getElementById('kra_dropdown__' + ms_id);
+                    kradropdownId.id = 'kra_dropdown__'+data.user_resp_query_id;
+                    // delBtn.classList.remove("d-none");
+                    delBtn.onclick = function(){
+                        delete_user_response(this, data.user_resp_query_id);   
+                    }
+                    var editiconElement = saveBtn.querySelector("i");
+                    editiconElement.classList.remove("fa-trash-check");
+                    editiconElement.classList.add("fa-edit");
+                    saveBtn.onclick = function(){
+                        get_user_list_and_make_userresposible_dropdown(data.user_resp_query_id, checklist_id, 'Old');
+                    }
+                    
+                    var html_1 = `<span data-user-id="${selected_user.id}" id="person_responsible_dropdown_span__${data.user_resp_query_id}">${selected_user.name}</span>`;
+                    userRespdropdownId.outerHTML = html_1;
+
+                    var html_2 = `<span id="compliance_dropdown_span__${data.user_resp_query_id}">${selected_compliance}</span>`;
+                    compliancepdropdownId.outerHTML = html_2;
+
+                    var html_3 = `<span id="auditor_remark_span__${data.user_resp_query_id}">${remark_text}</span>`;
+                    remarkText.outerHTML = html_3;
+
+                    var html_4 = `<span id="kra_dropdown_span__${data.user_resp_query_id}">${selected_kra}</span>`;
+                    kradropdownId.outerHTML = html_4;
+                }
+                else {
+                    $('#cover-spin').hide(0);
+                    alert('Something went wrong, Please try again after refreshing the page')
+                }
+            });
     }
 
     function delete_user_response(t, user_response_id) {
@@ -439,9 +381,27 @@
         }
     }
 
-    function get_selected_user_responsible(t){
+    function change_user_as_per_kra(t) {
+        console.log('in')
+            var selected_kra = t.value;
+            var kra_id = t.id.split('__')[1];
+            console.log('innnn', kra_id, selected_kra)
+            var user_responsible_dropdown = document.getElementById('person_responsible_dropdown__' + kra_id);
+            user_responsible_dropdown.length = 0;
+            var filtered_user = all_employee_list.filter(function (dr) {
+                return dr[3].indexOf(center_id) != -1 && dr[2].indexOf(selected_kra) != -1;
+            });
 
-    }
+            for (var i = 0; i < filtered_user.length; i++) {
+                var option = document.createElement("option");
+                option.value = filtered_user[i][0].toString().trim(); // Set the value attribute
+                option.text = filtered_user[i][1].toString().trim();  // Set the text displayed in the option
+                // Append the option to the select element
+                user_responsible_dropdown.appendChild(option);
+            }
+            console.log('filter', filtered_user)
+
+        }
 
 </script>
 
