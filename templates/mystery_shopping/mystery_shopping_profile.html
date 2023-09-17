@@ -381,10 +381,10 @@
         }
     }
 
-    function change_user_as_per_kra(t) {
+    function change_user_as_per_kra(t, selected_value='') {
         console.log('in')
             var selected_kra = t.value;
-            var kra_id = t.id.split('__')[1];
+            var kra_id = t.id;
             console.log('innnn', kra_id, selected_kra)
             var user_responsible_dropdown = document.getElementById('person_responsible_dropdown__' + kra_id);
             user_responsible_dropdown.length = 0;
@@ -396,6 +396,10 @@
                 var option = document.createElement("option");
                 option.value = filtered_user[i][0].toString().trim(); // Set the value attribute
                 option.text = filtered_user[i][1].toString().trim();  // Set the text displayed in the option
+                if(option.value== selected_value)
+                {
+                    option.selected = true;
+                }
                 // Append the option to the select element
                 user_responsible_dropdown.appendChild(option);
             }
