@@ -58,7 +58,7 @@
                                         {% if each_user_response.mystery_checklist.id == each_detail.id %}
                                         <tr>
                                             <td style="width: 15%; white-space: normal;">
-                                                <select disabled class="form-control" id="kra_dropdown__{{each_user_response.id}}" onchange="change_user_as_per_kra(this)">
+                                                <select disabled class="form-control" id="kra_dropdown__{{each_user_response.id}}" onchange="change_user_as_per_kra({'id':'{{each_user_response.id}}', 'value':this.value}, '{{each_user_response.staff.id}}')">
                                                     <option value=""></option>
                                                     {% for each_kra in each_detail.kra|split:"," %}
                                                     <option {% if each_user_response.kra == each_kra %} selected {% endif %} value="{{each_kra}}">{{each_kra}}</option>
@@ -88,10 +88,11 @@
                                                 <span class="text-danger" id="remark_error__{{each_user_response.id}}"></span>
                                             </td>
                                             <td style="white-space: normal;">
-                                                <div class="row">
+                                                <div class="">
                                                     {% if not each_detail.mystery_shopping.auditor_action_reviewed == True %} 
                                                     <button class="btn btn-link" onclick="make_user_responsible_row_editable('{{each_user_response.id}}', '{{each_detail.id}}')" id="edit_person_responsible_btn__{{each_user_response.id}}"><i class="fas fa-edit"></i></button>
                                                     <button class="btn btn-link" onclick="delete_user_response(this, '{{each_user_response.id}}')" id="remove_person_responsible_row__{{each_user_response.id}}" ><i class="fas fa-trash"></i></button>
+                                                    <button id="append_all_user_list_button__{{each_user_response.id}}" class="btn btn-link d-none fixed-bottom" onclick="append_all_user_list_to_dropdown('{{each_user_response.id}}')"><i class="fas fa-users"></i></button>
                                                     {% endif %}
                                                 </div>
                                             </td>
@@ -223,7 +224,7 @@
         // console.log('text', kra_text, complianceValue);
         newRow.innerHTML = `
             <td style="width: 15%; white-space: normal;">
-                <select class="form-control" id="kra_dropdown__${rowCount}new" onchange="change_user_as_per_kra(this)">
+                <select class="form-control" id="kra_dropdown__${rowCount}new" onchange="change_user_as_per_kra({'id':'${rowCount}new', 'value':this.value})">
                 </select>
             </td>
             <td style="width: 25%; white-space: normal;">
@@ -237,13 +238,14 @@
                 <span class="text-danger" id="remark_error__${rowCount}new"></span> 
             </td>
             <td style="white-space: normal;">
-                <div class="row">
+                <div class="">
                     <button class="btn btn-link" id="edit_person_responsible_btn__${rowCount}new" onclick="save_and_disable_user_responsible_row('${rowCount}new', ${checklist_id}, 'New')">
                         <i class="fas fa-check"></i>
                     </button>
                     <button class="btn btn-link" id="remove_person_responsible_row__${rowCount}new" onclick="remove_person_responsible_row(this)">
                         <i class="fas fa-trash"></i>
                     </button>
+                    <button id="append_all_user_list_button__${rowCount}new" class="btn btn-link" onclick="append_all_user_list_to_dropdown('${rowCount}new')"><i class="fas fa-users"></i></button>
                 </div>
             </td>
         `;
@@ -287,20 +289,13 @@
         }
     }
 
-
-    function disable_and_enable_fields(t, status){
-        document.getElementById('kra_dropdown__'+t).disabled = status;
-        document.getElementById('person_responsible_dropdown__' + t).disabled = status;
-        document.getElementById('compliance_dropdown__' + t).disabled = status;
-        document.getElementById('auditor_remark__'+t).disabled = status;
-    }
-
     function make_user_responsible_row_editable(t, checklist_id) {
         var user_resp_row_id = t;
         var kra_dropdown = document.getElementById('kra_dropdown__' + user_resp_row_id);
         var selected_kra = kra_dropdown.value;
         var person_responsible_dropdown = document.getElementById('person_responsible_dropdown__' + user_resp_row_id);
         var selected_user = person_responsible_dropdown.value;
+        document.getElementById('append_all_user_list_button__'+user_resp_row_id).classList.remove('d-none');
         change_user_as_per_kra({'id':user_resp_row_id, 'value':selected_kra}, selected_user);
         disable_and_enable_fields(user_resp_row_id, false)
         
@@ -375,6 +370,7 @@
                     if (data.msg == 'success') {
                         var delBtn = document.getElementById("remove_person_responsible_row__" + user_resp_row_id);
                         var saveBtn = document.getElementById("edit_person_responsible_btn__" + user_resp_row_id);
+                        var append_all_user_btn = document.getElementById('append_all_user_list_button__' + user_resp_row_id);
                         var userRespdropdownId = document.getElementById('person_responsible_dropdown__' + user_resp_row_id);
                         var compliancepdropdownId = document.getElementById('compliance_dropdown__' + user_resp_row_id);
                         var kradropdownId = document.getElementById('kra_dropdown__' + user_resp_row_id);
@@ -383,11 +379,18 @@
                         if(status == 'New'){
                             delBtn.id = 'remove_person_responsible_row__' + user_resp_query_id;
                             saveBtn.id = 'edit_person_responsible_btn__' + user_resp_query_id;
+                            append_all_user_btn.id = 'append_all_user_list_button__'+user_resp_query_id;
                             userRespdropdownId.id = 'person_responsible_dropdown__' + user_resp_query_id;
                             compliancepdropdownId.id = 'compliance_dropdown__' + user_resp_query_id;
                             kradropdownId.id = 'kra_dropdown__' + user_resp_query_id;
                             remarkText.id = 'auditor_remark__' + user_resp_query_id;
                             remarkError.id = 'remark_error__'+user_resp_query_id
+                        }
+                        console.log('selected_user', selected_user)
+                        for (var i = userRespdropdownId.options.length - 1; i >= 0; i--) {
+                            if (userRespdropdownId.options[i].value !== selected_user) {
+                                userRespdropdownId.remove(i);
+                            }
                         }
                         
                         delBtn.onclick = function () {
@@ -399,6 +402,7 @@
                         saveBtn.onclick = function () {
                             make_user_responsible_row_editable(user_resp_query_id, checklist_id, 'Old');
                         }
+                        append_all_user_btn.classList.add('d-none');
                         disable_and_enable_fields(user_resp_query_id, true);
                         $('#cover-spin').hide(0);
                     }
@@ -411,6 +415,51 @@
     
         function clear_remarks(remark_error_id){
             document.getElementById(remark_error_id).innerHTML = '';
+        }
+
+        function disable_and_enable_fields(t, status) {
+            try {
+                document.getElementById('kra_dropdown__' + t).disabled = status;
+                document.getElementById('person_responsible_dropdown__' + t).disabled = status;
+                document.getElementById('compliance_dropdown__' + t).disabled = status;
+                document.getElementById('auditor_remark__' + t).disabled = status;
+            } catch (e) { }
+        }
+
+        function change_user_as_per_kra(t, selected_value = '') {
+            console.log('in')
+            var selected_kra = t.value;
+            var kra_id = t.id;
+            console.log('innnn', kra_id, selected_kra, center_id)
+            var user_responsible_dropdown = document.getElementById('person_responsible_dropdown__' + kra_id);
+            user_responsible_dropdown.length = 0;
+            var filtered_user = all_employee_list.filter(function (dr) {
+                return dr[3].indexOf(center_id) != -1 && dr[2].indexOf(selected_kra) != -1;
+            });
+            var selected_user_from_list = all_employee_list.filter(function (dr) {
+                return dr[0].toString().trim() === selected_value;
+            })
+            console.log('user', selected_user_from_list)
+            if (selected_user_from_list && selected_user_from_list.length > 0) {
+                var selectedOption = document.createElement("option");
+                selectedOption.value = selected_user_from_list[0][0];
+                selectedOption.text = selected_user_from_list[0][1]; // You can set this to the appropriate text if needed
+                selectedOption.selected = true;
+                user_responsible_dropdown.appendChild(selectedOption);
+            }
+            console.log('user', selected_user_from_list)
+
+            for (var i = 0; i < filtered_user.length; i++) {
+                if (filtered_user[i][0].toString().trim() !== selected_value) {
+                    var option = document.createElement("option");
+                    option.value = filtered_user[i][0].toString().trim(); // Set the value attribute
+                    option.text = filtered_user[i][1].toString().trim();  // Set the text displayed in the option
+                    user_responsible_dropdown.appendChild(option);
+                }
+                // Append the option to the select element
+            }
+            console.log('filter', filtered_user)
+
         }
 
 </script>

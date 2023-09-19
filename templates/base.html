@@ -598,6 +598,22 @@
                 }
             });
         }
+    
+    function append_all_user_list_to_dropdown(dropdown_id) {
+        var user_responsible_dropdown = document.getElementById('person_responsible_dropdown__' + dropdown_id);
+        $(user_responsible_dropdown).select2();
+        user_responsible_dropdown.length = 0;
+        var all_user_list = all_employee_list; //employee list is coming from backend which is usniversal assigned in js 
+
+        for (var i = 0; i < all_user_list.length; i++) {
+            var option = document.createElement("option");
+            option.value = all_user_list[i][0].toString().trim(); // Set the value attribute
+            option.text = all_user_list[i][1].toString().trim();  // Set the text displayed in the option
+            // Append the option to the select element
+            user_responsible_dropdown.appendChild(option);
+        }
+
+    }
 </script>
 
 </html>

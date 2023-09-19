@@ -268,7 +268,8 @@ def mystery_shopping_overview(request):
         'searched_personal_intervene')
     search_imp_checklist = request.GET.get('search_imp_checklist')
     search_user_type = request.GET.get('search_user_type')
-    all_employee_query = UserProfile.objects.all().exclude(user__is_superuser=True)
+    all_employee_query = UserProfile.objects.all().exclude(
+        is_super_admin=True).prefetch_related('user')
     all_center = ExtendedZenotiCenterData.objects.filter(
         center_status='Active')
     all_mystery_master = MysteryShoppingOverview.objects.filter(
@@ -279,13 +280,22 @@ def mystery_shopping_overview(request):
     is_project_owner = False
     is_audit_admin = False
 
-    for each_employee in all_employee_query:
-        tempUserObj = {}
-        tempUserObj["id"] = each_employee.id
-        sanitized_first_name = sanitize_name(each_employee.user.first_name)
-        sanitized_last_name = sanitize_name(each_employee.user.last_name)
-        tempUserObj["name"] = f"{sanitized_first_name} {sanitized_last_name}"
+    for each_user in all_employee_query:
+        tempUserObj = []
+        tempUserObj.append(each_user.id)
+        sanitized_first_name = sanitize_name(each_user.user.first_name)
+        sanitized_last_name = sanitize_name(each_user.user.last_name)
+        tempUserObj.append(f"{sanitized_first_name} {sanitized_last_name}")
+        kra_list = []
+        for each_role in each_user.associated_role.all():
+            kra_list.append(each_role.name)
+        tempUserObj.append(kra_list)
+        center_list = []
+        for each_center in each_user.associated_center.all():
+            center_list.append(each_center.id)
+        tempUserObj.append(center_list)
         all_employee_list.append(tempUserObj)
+
     access_detail_ar_kv = get_user_access_detail(
         staffProfile, 'Mystery Shopper')
     access_detail = access_detail_ar_kv[0]
@@ -538,9 +548,11 @@ def mystery_shopping_overview(request):
         if this_detail_person_responsible:
             for each_person_responsible in this_detail_person_responsible:
                 temp = {}
-                temp['user_resp_id'] = each_person_responsible.id
+                temp['user_resp_query_id'] = each_person_responsible.id
+                temp['user_resp_id'] = each_person_responsible.staff.id
                 temp['center'] = str(
                     each_person_responsible.mystery_checklist.mystery_shopping.center.zenoti_data.name)
+                temp['center_id'] = each_person_responsible.mystery_checklist.mystery_shopping.center.id
                 temp['month_of_audit'] = str(
                     each_person_responsible.mystery_checklist.mystery_shopping.month_of_audit.month)
                 temp['audit_by'] = str(
@@ -603,6 +615,11 @@ def mystery_shopping_overview(request):
                     )
                 except Exception as e:
                     temp['user_resp_name'] = None
+
+                try:
+                    temp['user_resp_kra'] = each_person_responsible.kra
+                except Exception as e:
+                    temp['user_resp_kra'] = None
 
                 try:
                     temp['compliance_dropdown'] = each_person_responsible.mystery_checklist.compliance_dropdown
@@ -1534,6 +1551,31 @@ def edit_mystery_extra_data(request):
         else:
             return JsonResponse({"msg": "failed"})
     return render(request, "mystery_shopping/mystery_shopping_tabs_page.html")
+
+
+def save_user_responsible_and_kra_in_atrPage(request):
+    if request.method == "POST":
+        data = json.loads(request.body)
+        user_resp_query_id = data['user_resp_row_id']
+        got_user = data['selected_user']
+        got_kra = data['get_kra']
+
+        try:
+            user_resp_query = MysteryChecklistPersonResponsible.objects.get(
+                id=int(user_resp_query_id))
+        except Exception:
+            user_resp_query = None
+        if user_resp_query:
+            try:
+                staff_query = UserProfile.objects.get(id=int(got_user))
+            except Exception:
+                staff_query = None
+            user_resp_query.kra = got_kra
+            user_resp_query.staff = staff_query
+            user_resp_query.save()
+            return JsonResponse({"msg": "success"})
+        else:
+            return JsonResponse({"msg": "failed"})
 
 
 @csrf_exempt

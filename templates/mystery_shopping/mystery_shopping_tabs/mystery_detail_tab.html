@@ -181,7 +181,7 @@
                 <tr>
                     <td class="col1" style="white-space: normal;">
                         <span class="text-muted">
-                            {{each_detail.center|default_if_none:'' }} <br>
+                            <span data-center-id="{{each_detail.center_id }}" id="center_data__{{each_detail.user_resp_query_id}}">{{each_detail.center|default_if_none:'' }}</span> <br>
                             {{each_detail.month_of_audit|default_if_none:'' }} 
                         </span>
                     </td>
@@ -218,25 +218,33 @@
                         </span>
                     </td>
                     <td class="col5" style="white-space: normal;">
-                        {% if each_detail.user_resp_id %}
-                        <i class="{% if each_detail.is_important %} fas {% else %} far {% endif %} fa-star text-info" id="important_checklist_{{each_detail.user_resp_id}}" onclick="mark_checklist_important('{{each_detail.user_resp_id}}')"></i>
+                        {% if each_detail.user_resp_query_id %}
+                        <i class="{% if each_detail.is_important %} fas {% else %} far {% endif %} fa-star text-info" id="important_checklist_{{each_detail.user_resp_query_id}}" onclick="mark_checklist_important('{{each_detail.user_resp_query_id}}')"></i>
                         {% endif %}
                         <span class="text-muted" style="white-space: pre-wrap;"><b>{{each_detail.mystery_shopping_id}} - {{each_detail.checklist_sequence}}</b><br>{{each_detail.checklist|default_if_none:'' }}</span>
                     </td>
                     <td class="col6" style="white-space: normal;">
-                        {% if each_detail.user_resp_id %}
+                        {% if each_detail.user_resp_query_id %}
                         <table class="table">
                             <tbody>
                                 <tr>
                                     <td style="width: 80%; white-space: normal;">
-                                        <span id="person_responsible_dropdown_{{each_detail.user_resp_id}}">
-                                            {{each_detail.user_resp_name|default_if_none:'' }}
-                                        </span>
+                                        <select disabled class="form-control" id="kra_dropdown__{{each_detail.user_resp_query_id}}" onchange="change_user_as_per_kra({ 'id':'{{each_detail.user_resp_query_id}}', 'value': this.value },'{{each_detail.center_id}}', '{{each_detail.user_resp_id}}');">
+                                            <option value=""></option>
+                                            {% for each_kra in each_detail.kra|split:"," %}
+                                            <option {% if each_detail.user_resp_kra == each_kra %} selected {% endif %} value="{{each_kra}}">{{each_kra}}</option>
+                                            {% endfor %}
+                                        </select>
+                                        <select disabled class="form-control mt-1" id="person_responsible_dropdown__{{each_detail.user_resp_query_id}}">
+                                            <option value=""></option>
+                                            <option selected value="{{each_detail.user_resp_id}}">{{each_detail.user_resp_name|default_if_none:'' }}</option>
+                                        </select>
                                     </td>
                                     <td style="white-space: normal;">
                                         {% if not each_detail.compliance == 'NA' %}
-                                            <button class="btn btn-link responsible_person_edit_btn" id="edit_person_responsible_btn_{{each_detail.user_resp_id}}" onclick="get_user_list_and_make_userresposible_dropdown(this)"><i class="fas fa-edit"></i></button>
-                                            <button class="btn btn-link d-none" name="person_responsible" id="save_person_responsible_btn_{{each_detail.user_resp_id}}" onclick="edit_extra_mystery_data(this, '{{each_detail.user_resp_id}}' )"><i class="fas fa-check"></i></button>
+                                            <button class="btn btn-link responsible_person_edit_btn" id="make_editable_person_responsible_btn__{{each_detail.user_resp_query_id}}" onclick="make_user_response_editable_in_atr_page('{{each_detail.user_resp_query_id}}')"><i class="fas fa-edit"></i></button>
+                                            <button class="btn btn-link d-none" name="person_responsible" id="save_person_responsible_btn__{{each_detail.user_resp_query_id}}" onclick="save_and_disable_user_responsible_and_kra('{{each_detail.user_resp_query_id}}' )"><i class="fas fa-check"></i></button>
+                                            <button id="append_all_user_list_button__{{each_detail.user_resp_query_id}}" class="btn btn-link d-none fixed-bottom" onclick="append_all_user_list_to_dropdown('{{each_detail.user_resp_query_id}}')"><i class="fas fa-users"></i></button>
                                         {% endif %}
                                     </td>
                                 </tr>
@@ -245,8 +253,8 @@
                         {% endif %}
                     </td>
                     <td class="col7" style="white-space: normal;">
-                        {% if each_detail.user_resp_id %}
-                            <select class="form-control p-0 compliance_input" name="atr_complience" id="complience_{{each_detail.user_resp_id}}" onchange="edit_extra_mystery_data(this, '{{each_detail.user_resp_id}}')">
+                        {% if each_detail.user_resp_query_id %}
+                            <select class="form-control p-0 compliance_input" name="atr_complience" id="complience_{{each_detail.user_resp_query_id}}" onchange="edit_extra_mystery_data(this, '{{each_detail.user_resp_query_id}}')">
                                 <option value="">Select</option> 
                                 {% for compliance in each_detail.compliance_dropdown|split:"," %} 
                                 <option {% if each_detail.compliance == compliance|get_sanitize_name %} selected {% endif %} value="{{compliance}}">{{compliance}}</option> 
@@ -254,24 +262,24 @@
                             </select>
                             {% if each_detail.compliance_category %} 
                                 <h4>
-                                    <span id="ms_compliance_category_{{each_detail.user_resp_id}}" class=" badge mt-2 {% if each_detail.compliance_category_percentage == '100' %} badge-success {% elif each_detail.compliance_category_percentage == '50' %} badge-warning {% elif each_detail.compliance_category_percentage == '0' %} badge-danger {% else %} badge-primary {% endif %} ">
+                                    <span id="ms_compliance_category_{{each_detail.user_resp_query_id}}" class=" badge mt-2 {% if each_detail.compliance_category_percentage == '100' %} badge-success {% elif each_detail.compliance_category_percentage == '50' %} badge-warning {% elif each_detail.compliance_category_percentage == '0' %} badge-danger {% else %} badge-primary {% endif %} ">
                                         {{each_detail.compliance_category|default_if_none:'' }} {% endif %} - {% if each_detail.compliance_category_percentage %} {{each_detail.compliance_category_percentage|default_if_none:''}}% </span>
                                 </h4>
                             {% endif %}
                         {% endif %}
                     </td>
                     <td class="col8" style="white-space: normal;">
-                        {% if each_detail.user_resp_id %}
+                        {% if each_detail.user_resp_query_id %}
                         <span class="text-muted">
-                            <textarea class="form-control remark_input" name="user_remark" id="remark_{{each_detail.user_resp_id}}" rows="3" onchange="edit_extra_mystery_data(this, '{{each_detail.user_resp_id}}')" {% if each_detail.compliance == 'NA' %} disabled {% endif %}>{{each_detail.remark|default_if_none:'' }}</textarea>
+                            <textarea class="form-control remark_input" name="user_remark" id="remark_{{each_detail.user_resp_query_id}}" rows="3" onchange="edit_extra_mystery_data(this, '{{each_detail.user_resp_query_id}}')" {% if each_detail.compliance == 'NA' %} disabled {% endif %}>{{each_detail.remark|default_if_none:'' }}</textarea>
                         </span>
                         {% endif %}
                     </td>
                     {% if not is_project_owner %}
                     <td class="col9">
-                        {% if each_detail.user_resp_id %}
+                        {% if each_detail.user_resp_query_id %}
                         <div class="form-group">
-                            <select class="form-control action_status_input" name="action_status" id="action_status_{{each_detail.user_resp_id}}" onchange="edit_extra_mystery_data(this, '{{each_detail.user_resp_id}}')">
+                            <select class="form-control action_status_input" name="action_status" id="action_status_{{each_detail.user_resp_query_id}}" onchange="edit_extra_mystery_data(this, '{{each_detail.user_resp_query_id}}')">
                                 <!-- <option value=""></option> -->
                                 <option {% if each_detail.action_status == 'Action Taken' %} selected {% endif %} value="Action Taken">Action Taken</option>
                                 <option {% if each_detail.action_status == 'Action Required' %} selected {% endif %} value="Action Required">Action Required</option>
@@ -280,18 +288,18 @@
                         {% endif %}
                     </td>
                     <td class="col10">
-                        {% if each_detail.user_resp_id %}
+                        {% if each_detail.user_resp_query_id %}
                         <div class="form-group">
-                            <textarea class="form-control auditor_comment_input" type="text" name="comment_auditor" id="comment_auditor_{{each_detail.user_resp_id}}" rows="3" onchange="edit_extra_mystery_data(this, '{{each_detail.user_resp_id}}')">{{each_detail.comment_for_auditor|default_if_none:''}}</textarea>
+                            <textarea class="form-control auditor_comment_input" type="text" name="comment_auditor" id="comment_auditor_{{each_detail.user_resp_query_id}}" rows="3" onchange="edit_extra_mystery_data(this, '{{each_detail.user_resp_query_id}}')">{{each_detail.comment_for_auditor|default_if_none:''}}</textarea>
                         </div>
                         {% endif %}
                     </td>
                     {% endif %}
                     <td class="col11">
-                        {% if each_detail.user_resp_id %}
+                        {% if each_detail.user_resp_query_id %}
                         {% if each_detail.compliance_category_percentage|add:'0' >= 0 and each_detail.compliance_category_percentage|add:'0' < 100 %}
                         <div class="form-group">
-                            <select class="form-control action_taken_by_om_input {% if not each_detail.action_taken_by_outlet_manager %}  bg-danger text-white  {% endif %}" name="action_outlet" id="action_outlet_{{each_detail.user_resp_id}}" onchange="edit_extra_mystery_data(this, '{{each_detail.user_resp_id}}')">
+                            <select class="form-control action_taken_by_om_input {% if not each_detail.action_taken_by_outlet_manager %}  bg-danger text-white  {% endif %}" name="action_outlet" id="action_outlet_{{each_detail.user_resp_query_id}}" onchange="edit_extra_mystery_data(this, '{{each_detail.user_resp_query_id}}')">
                                 <option value="">Select</option>
                                 <option {% if each_detail.action_taken_by_outlet_manager == 'Resource shortage' %} selected {% endif %} value="Resource shortage">Resource shortage</option>
                                 <option {% if each_detail.action_taken_by_outlet_manager == 'Facility issue' %} selected {% endif %} value="Facility issue">Facility issue</option>
@@ -304,10 +312,10 @@
                         {% endif %}
                     </td>
                     <td class="col12">
-                        {% if each_detail.user_resp_id %}
+                        {% if each_detail.user_resp_query_id %}
                         {% if each_detail.compliance_category_percentage|add:'0' >= 0 and each_detail.compliance_category_percentage|add:'0' < 100 %}
                         <div class="form-group">
-                            <select class="form-control status_by_om_input {% if not each_detail.status_by_om %}  bg-danger text-white  {% endif %}" name="status_om" id="status_om_{{each_detail.user_resp_id}}" onchange="edit_extra_mystery_data(this, '{{each_detail.user_resp_id}}')">
+                            <select class="form-control status_by_om_input {% if not each_detail.status_by_om %}  bg-danger text-white  {% endif %}" name="status_om" id="status_om_{{each_detail.user_resp_query_id}}" onchange="edit_extra_mystery_data(this, '{{each_detail.user_resp_query_id}}')">
                                 <option value="">Select</option>
                                 <option {% if each_detail.status_by_om == 'Open' %} selected {% endif %} value="Open">Open</option>
                                 <option {% if each_detail.status_by_om == 'Closed' %} selected {% endif %} value="Closed">Closed</option>
@@ -317,19 +325,19 @@
                         {% endif %}
                     </td>
                     <td class="col13">
-                        {% if each_detail.user_resp_id %}
+                        {% if each_detail.user_resp_query_id %}
                         {% if each_detail.compliance_category_percentage|add:'0' >= 0 and each_detail.compliance_category_percentage|add:'0' < 100 %}
                         <div class="form-group">
-                            <textarea class="form-control remark_by_om_input {% if not each_detail.remark_by_om %}  bg-danger text-white  {% endif %}" name="remark_om" id="remark_om_{{each_detail.user_resp_id}}" rows="3" onchange="edit_extra_mystery_data(this, '{{each_detail.user_resp_id}}')" >{{each_detail.remark_by_om|default_if_none:''}}</textarea>
+                            <textarea class="form-control remark_by_om_input {% if not each_detail.remark_by_om %}  bg-danger text-white  {% endif %}" name="remark_om" id="remark_om_{{each_detail.user_resp_query_id}}" rows="3" onchange="edit_extra_mystery_data(this, '{{each_detail.user_resp_query_id}}')" >{{each_detail.remark_by_om|default_if_none:''}}</textarea>
                         </div>
                         {% endif %}
                         {% endif %}
                     </td>
                     {% if not is_project_owner %}
                     <td class="col14">
-                        {% if each_detail.user_resp_id %}
+                        {% if each_detail.user_resp_query_id %}
                         <div class="form-group">
-                            <select class="form-control action_taken_by_management_input" name="action_management" id="action_management_{{each_detail.user_resp_id}}" onchange="edit_extra_mystery_data(this, '{{each_detail.user_resp_id}}')">
+                            <select class="form-control action_taken_by_management_input" name="action_management" id="action_management_{{each_detail.user_resp_query_id}}" onchange="edit_extra_mystery_data(this, '{{each_detail.user_resp_query_id}}')">
                                 <option value="">Select</option>
                                 <option {% if each_detail.action_taken_by_management == 'Verbal Warning' %} selected {% endif %} value="Verbal Warning"> Verbal Warning </option>
                                 <option {% if each_detail.action_taken_by_management == 'Warning Letter' %} selected {% endif %} value="Warning Letter"> Warning Letter </option>
@@ -342,16 +350,16 @@
                         {% endif %}
                     </td>
                     <td class="col15">
-                        {% if each_detail.user_resp_id %}
+                        {% if each_detail.user_resp_query_id %}
                         <div class="form-group">
-                            <textarea class="form-control remark_management_input" name="remark_management" id="remark_management_{{each_detail.user_resp_id}}" onchange="edit_extra_mystery_data(this, '{{each_detail.user_resp_id}}')" rows="3">{{each_detail.remark_by_management|default_if_none:''}}</textarea>
+                            <textarea class="form-control remark_management_input" name="remark_management" id="remark_management_{{each_detail.user_resp_query_id}}" onchange="edit_extra_mystery_data(this, '{{each_detail.user_resp_query_id}}')" rows="3">{{each_detail.remark_by_management|default_if_none:''}}</textarea>
                         </div>
                         {% endif %}
                     </td>
                     <td class="col16">
-                        {% if each_detail.user_resp_id %}
+                        {% if each_detail.user_resp_query_id %}
                         <div class="form-group">
-                            <select class="form-control expected_intervene_input" name="expected_intervene" id="expected_intervene_{{each_detail.user_resp_id}}" onchange="edit_extra_mystery_data(this, '{{each_detail.user_resp_id}}')">
+                            <select class="form-control expected_intervene_input" name="expected_intervene" id="expected_intervene_{{each_detail.user_resp_query_id}}" onchange="edit_extra_mystery_data(this, '{{each_detail.user_resp_query_id}}')">
                                 <option value="">Select</option>
                                 <option {% if each_detail.expected_dept_intervene == 'OM' %} selected {% endif %}
                                 value="OM">OM</option>
@@ -375,16 +383,16 @@
                         {% endif %}
                     </td>
                     <td class="col17">
-                        {% if each_detail.user_resp_id %}
+                        {% if each_detail.user_resp_query_id %}
                         <div class="form-group">
-                            <textarea class="form-control remark_department_input" name="remark_department" id="remark_department_{{each_detail.user_resp_id}}" onchange="edit_extra_mystery_data(this, '{{each_detail.user_resp_id}}')" rows="3">{{each_detail.remark_by_department|default_if_none:''}}</textarea>
+                            <textarea class="form-control remark_department_input" name="remark_department" id="remark_department_{{each_detail.user_resp_query_id}}" onchange="edit_extra_mystery_data(this, '{{each_detail.user_resp_query_id}}')" rows="3">{{each_detail.remark_by_department|default_if_none:''}}</textarea>
                         </div>
                         {% endif %}
                     </td>
                     <td class="col18">
-                        {% if each_detail.user_resp_id %}
+                        {% if each_detail.user_resp_query_id %}
                         <div class="form-group">
-                            <select class="form-control status_department_input" name="status_department" id="status_department_{{each_detail.user_resp_id}}" onchange="edit_extra_mystery_data(this, '{{each_detail.user_resp_id}}')">
+                            <select class="form-control status_department_input" name="status_department" id="status_department_{{each_detail.user_resp_query_id}}" onchange="edit_extra_mystery_data(this, '{{each_detail.user_resp_query_id}}')">
                                 <option value="">Select</option>
                                 <option {% if each_detail.status_by_department == 'Open' %} selected {% endif %} 
                                 value="Open">Open</option>
@@ -418,7 +426,10 @@
 
         var top_paginator = document.getElementById('top_paginator_div').innerHTML;
         document.getElementById('bottom_paginator_div').innerHTML = top_paginator;
+        
+        all_employee_list = {{ all_employee_list|safe }};
     });
+    var all_employee_list = [];
 </script>
 
 {% if not is_project_owner %}  
@@ -460,46 +471,6 @@
 {% endif %}
 
 <script>
-    function toggle_user_reponsible_search(btn_id) {
-            var input_id = btn_id.id.split("_")[1];
-            var input = document.getElementById("search-box_" + input_id);
-            var select_input = document.getElementById('employee-select_'+input_id);
-            var emp_text = document.getElementById('emp-text_'+input_id);
-            if (input.style.display === "none") {
-                input.style.display = "block";
-                select_input.style.display = "block";
-                emp_text.style.display = "none";
-                btn_id.innerHTML = '<i class="fas fa-check"></i>'
-            } else {
-                input.style.display = "none";
-                select_input.style.display = "none";
-                emp_text.style.display = "block";
-                btn_id.innerHTML = '<i class="fas fa-pencil-alt"></i>'
-            }
-        }
-    function user_searchBox(loop_num) {
-            var searchBox = $('#search-box_' + loop_num);
-            var dropdown = $('#employee-select_' + loop_num);
-            // console.log("loop", loop_num)
-            var searchQuery = searchBox.val();
-            // console.log("input", searchQuery);
-            if(searchQuery.length > 3){
-                $.ajax({
-                    url: '/user_search_list/',
-                    type: 'GET',
-                    data: { 'search_query': searchQuery },
-                    success: function (response) {
-                        // console.log('data', response)
-                        var options = '';
-                        for (var i = 0; i < response.length; i++) {
-                            options += '<option value="' + response[i].id + '">' + response[i].name + '</option>';
-                        }
-                        dropdown.append(options);
-                        // dropdown.html(data);
-                    }
-                });
-            }
-        }
 
     let mainCheckbox = document.getElementById('select-all-checkbox');
     // let toggleCheckboxes = document.querySelectorAll('.toggle');
@@ -703,19 +674,99 @@
                 }
             });
     }
+    
+    function make_user_response_editable_in_atr_page(user_responsible_row_id){
+        var editBtn = document.getElementById('make_editable_person_responsible_btn__'+ user_responsible_row_id);
+        var allUserBtn = document.getElementById('append_all_user_list_button__'+user_responsible_row_id);
+        var saveBtn = document.getElementById('save_person_responsible_btn__'+user_responsible_row_id);
+        var user_responsible_dropdown = document.getElementById('person_responsible_dropdown__'+ user_responsible_row_id);
+        var selected_user = user_responsible_dropdown.value;
+        var kra_dropdown = document.getElementById('kra_dropdown__'+ user_responsible_row_id);
+        var selected_kra = kra_dropdown.value;
+        var this_center = document.getElementById('center_data__'+user_responsible_row_id);
+        var center_id = this_center.getAttribute('data-center-id');
+        console.log('edit', selected_user, selected_kra, center_id)
+        change_user_as_per_kra({ 'id': user_responsible_row_id, 'value': selected_kra }, center_id, selected_user );
+        editBtn.classList.add('d-none');
+        allUserBtn.classList.remove('d-none');
+        saveBtn.classList.remove('d-none');
+        disable_and_enable_fields(user_responsible_row_id, false);
 
-    var all_users = {{ all_employee_list|safe }};
-    function get_user_list_and_make_userresposible_dropdown(t) {
-        var ms_id_split = t.id.split('_');
-        var ms_id = ms_id_split.pop();
-        console.log('yes')
+    }
+
+    function disable_and_enable_fields(t, status) {
+        try {
+            document.getElementById('kra_dropdown__' + t).disabled = status;
+            document.getElementById('person_responsible_dropdown__' + t).disabled = status;
+        } catch (e) { }
+    }
+
+    function change_user_as_per_kra(t, center_id, selected_value = '') {
+        console.log('in');
+        var center_id_int = parseInt(center_id.toString().trim());
+        var selected_kra = t.value;
+        var kra_id = t.id;
+        console.log('innnn', kra_id, selected_kra, center_id_int)
+        var user_responsible_dropdown = document.getElementById('person_responsible_dropdown__' + kra_id);
+        user_responsible_dropdown.length = 0;
+        var filtered_user = all_employee_list.filter(function (dr) {
+            return dr[3].indexOf(center_id_int) != -1 && dr[2].indexOf(selected_kra) != -1;
+        });
+        var selected_user_from_list = all_employee_list.filter(function (dr) {
+            return dr[0].toString().trim() === selected_value;
+        })
+        console.log('all', all_employee_list)
+        console.log('user', selected_user_from_list)
+        console.log('filter', filtered_user)
+        if (selected_user_from_list && selected_user_from_list.length > 0) {
+            var selectedOption = document.createElement("option");
+            selectedOption.value = selected_user_from_list[0][0];
+            selectedOption.text = selected_user_from_list[0][1]; // You can set this to the appropriate text if needed
+            selectedOption.selected = true;
+            user_responsible_dropdown.appendChild(selectedOption);
+        }
+
+        for (var i = 0; i < filtered_user.length; i++) {
+            if (filtered_user[i][0].toString().trim() !== selected_value) {
+                var option = document.createElement("option");
+                option.value = filtered_user[i][0].toString().trim(); // Set the value attribute
+                option.text = filtered_user[i][1].toString().trim();  // Set the text displayed in the option
+                user_responsible_dropdown.appendChild(option);
+            }
+            // Append the option to the select element
+        }
+        // console.log('filter', filtered_user)
+
+    }
+
+    function save_and_disable_user_responsible_and_kra(user_resp_row_id) {
+        var editBtn = document.getElementById('make_editable_person_responsible_btn__' + user_resp_row_id);
+        var allUserBtn = document.getElementById('append_all_user_list_button__' + user_resp_row_id);
+        var saveBtn = document.getElementById('save_person_responsible_btn__' + user_resp_row_id);
+        var user_responsible_dropdown = document.getElementById('person_responsible_dropdown__' + user_resp_row_id);
+        var selected_user = user_responsible_dropdown.value;
+        var get_kra = document.getElementById('kra_dropdown__' + user_resp_row_id).value;
+
+        if (get_kra.length == 0) {
+            alert('Please select KRA');
+            return;
+        }
+        if (selected_user.length == 0) {
+            alert('Please select User');
+            return;
+        }
+        
         $('#cover-spin').show(0);
-        fetch("/sent_selected_user_list_to_frontend/", {
+        var response = {
+            'user_resp_row_id': user_resp_row_id,
+            'selected_user': selected_user,
+            'get_kra': get_kra
+        }
+
+
+        fetch("/save_user_responsible_and_kra_in_atrPage/", {
             method: "POST",
-            body: JSON.stringify({
-                'audit_id': ms_id,
-                'audit_name': 'Mystery Shopping',
-            }),
+            body: JSON.stringify(response),
             // Adding headers to the request
             headers: {
                 "Content-type": "application/json",
@@ -731,25 +782,24 @@
                 return response.json();
             })
             .then((data) => {
-                // console.log("Success: ", data);
-                var selected_user_list = data.user_json;
-                // var user_list = [7,8,9,10]
                 if (data.msg == 'success') {
+                    for (var i = user_responsible_dropdown.options.length - 1; i >= 0; i--) {
+                        if (user_responsible_dropdown.options[i].value !== selected_user) {
+                            user_responsible_dropdown.remove(i);
+                        }
+                    }
+                    editBtn.classList.remove('d-none');
+                    allUserBtn.classList.add('d-none');
+                    saveBtn.classList.add('d-none');
+                    disable_and_enable_fields(user_resp_row_id, true);
                     $('#cover-spin').hide(0);
-                    var dropDownId = 'person_responsible_dropdown_' + ms_id;
-                    create_dropdown(dropDownId, dropDownId, all_users, selected_user_list, 'single');
-                    var EditBtn = document.getElementById("edit_person_responsible_btn_" + ms_id);
-                    var saveBtn = document.getElementById("save_person_responsible_btn_" + ms_id);
-                    EditBtn.classList.add("d-none");
-                    saveBtn.classList.remove("d-none");
-                    saveBtn.classList.add("btn-link");
                 }
                 else {
                     $('#cover-spin').hide(0);
                     alert('Something went wrong, Please try again after refreshing the page')
                 }
             });
-        }
+    }
 
 
 </script>

@@ -262,33 +262,6 @@
         }
     }
 
-    function change_user_as_per_kra(t, selected_value='') {
-        console.log('in')
-            var selected_kra = t.value;
-            var kra_id = t.id;
-            console.log('innnn', kra_id, selected_kra, center_id)
-            var user_responsible_dropdown = document.getElementById('person_responsible_dropdown__' + kra_id);
-            user_responsible_dropdown.length = 0;
-            var filtered_user = all_employee_list.filter(function (dr) {
-                return dr[3].indexOf(center_id) != -1 && dr[2].indexOf(selected_kra) != -1;
-            });
-            console.log('user', filtered_user)
-
-            for (var i = 0; i < filtered_user.length; i++) {
-                var option = document.createElement("option");
-                option.value = filtered_user[i][0].toString().trim(); // Set the value attribute
-                option.text = filtered_user[i][1].toString().trim();  // Set the text displayed in the option
-                if(option.value == selected_value)
-                {
-                    option.selected = true;
-                }
-                // Append the option to the select element
-                user_responsible_dropdown.appendChild(option);
-            }
-            console.log('filter', filtered_user)
-
-        }
-
 </script>
 
 {% endblock %}

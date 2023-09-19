@@ -1,5 +1,5 @@
 from django.urls import path
-from .views import audit_users, mystery_shopping_overview, mystery_shopping_detail, edit_mystery_shopping_profile, edit_mystery_shopping, edit_mystery_extra_data, edit_audit_user_modal_popup, edit_mystery_audit_status_dropdown, user_search_list, edit_mystery_shopping_action_required, send_email_to_mystery_shopper_for_action_required, edit_mystery_reviewed_data, edit_mystery_file_description, mark_important_chcklist, set_center_correspondence_to_usertype
+from .views import audit_users, mystery_shopping_overview, mystery_shopping_detail, edit_mystery_shopping_profile, edit_mystery_shopping, edit_mystery_extra_data, edit_audit_user_modal_popup, edit_mystery_audit_status_dropdown, user_search_list, edit_mystery_shopping_action_required, send_email_to_mystery_shopper_for_action_required, edit_mystery_reviewed_data, edit_mystery_file_description, mark_important_chcklist, set_center_correspondence_to_usertype, save_user_responsible_and_kra_in_atrPage
 from django.conf import settings
 from django.conf.urls.static import static
 
@@ -17,6 +17,8 @@ urlpatterns = [
          name='edit_mystery_shopping'),
     path('edit_mystery_extra_data/', edit_mystery_extra_data,
          name='edit_mystery_extra_data'),
+    path('save_user_responsible_and_kra_in_atrPage/', save_user_responsible_and_kra_in_atrPage,
+         name='save_user_responsible_and_kra_in_atrPage'),
     path('mark_important_chcklist/', mark_important_chcklist,
          name='mark_important_chcklist'),
     path('edit_audit_user_modal_popup/', edit_audit_user_modal_popup,
