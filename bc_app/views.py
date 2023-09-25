@@ -633,6 +633,8 @@ def save_selected_user_responsible(request):
                     id=int(checklist_id))
             except Exception:
                 checklist_query = None
+            all_person_responsible_query_of_this_checklist = MysteryChecklistPersonResponsible.objects.filter(
+                mystery_checklist=checklist_query)
             if audit_name == 'Mystery Shopping':
                 person_resp_query = MysteryChecklistPersonResponsible.objects.create(
                     mystery_checklist=checklist_query,
@@ -643,7 +645,10 @@ def save_selected_user_responsible(request):
                     remark=get_remark,
                     kra=get_kra
                 )
-                person_resp_query.mystery_checklist.audit_status = 'Completed'
+                if len(all_person_responsible_query_of_this_checklist) > int(person_resp_query.mystery_checklist.minimum_person_responsible):
+                    person_resp_query.mystery_checklist.audit_status = 'Completed'
+                else:
+                    person_resp_query.mystery_checklist.audit_status = 'Pending'
                 person_resp_query.mystery_checklist.save()
         elif status == 'Old':
             try:
@@ -651,6 +656,8 @@ def save_selected_user_responsible(request):
                     id=int(user_resp_row_id))
             except Exception:
                 person_resp_query = None
+            all_person_responsible_query_of_this_checklist = MysteryChecklistPersonResponsible.objects.filter(
+                mystery_checklist=person_resp_query.mystery_checklist)
             person_resp_query.staff = staff_query
             person_resp_query.compliance = compliance_value
             person_resp_query.compliance_category = compliance_category

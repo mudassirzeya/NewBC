@@ -141,8 +141,9 @@
                         </div>
                         <div class="col">
                             <div class="form-group mb-4">
-                                <label class="mr-sm-2" for="inlineFormCustomSelect">Invoice Number</label>
+                                <label class="mr-sm-2" for="inlineFormCustomSelect">Invoice Number <span><button class="btn btn-sm btn-link" onclick="fetch_invoice_data_from_zenoti()">Fetch Data</button></span></label>
                                 {{mystery_form.invoice_number}}
+                                <span id="invoice_number_error" class="text-danger"></span>
                                 <!-- <input type="text" class="form-control" placeholder="password.." name="passcode" id="" required> -->
                             </div>
                         </div>
@@ -253,7 +254,7 @@
                                     <select class="select2 form-control" name="add_service_agent_1" id="add_service_agent_1" style="width: 100%;" required>
                                         <option value=""></option> 
                                         {% for agent in all_employee_list %} 
-                                        <option value="{{agent.id}}">{{agent.name}}</option> 
+                                        <option value="{{agent.0}}">{{agent.1}}</option> 
                                         {% endfor %}
                                     </select>
                                     <br>
@@ -276,7 +277,7 @@
                                     <select class="select2 form-control" name="add_service_agent_2" id="add_service_agent_2" style="width: 100%;" onchange="add_ms_required_field(this)">
                                         <option value=""></option> 
                                         {% for agent in all_employee_list %} 
-                                        <option value="{{agent.id}}">{{agent.name}}</option> 
+                                        <option value="{{agent.0}}">{{agent.1}}</option> 
                                         {% endfor %}
                                     </select>
                                     <p class="text-danger text-right">
@@ -294,7 +295,7 @@
                                     <select class="select2 form-control" name="add_service_agent_3" id="add_service_agent_3" style="width: 100%;" onchange="add_ms_required_field(this)">
                                         <option value=""></option> 
                                         {% for agent in all_employee_list %} 
-                                        <option value="{{agent.id}}">{{agent.name}}</option> 
+                                        <option value="{{agent.0}}">{{agent.1}}</option> 
                                         {% endfor %}
                                     </select>
                                     <p class="text-danger text-right">
@@ -311,7 +312,7 @@
                                 <select name="add_auditor_access_to" id="add_auditor_access_to_id" multiple="multiple">
                                     <!-- <option value=""></option>  -->
                                     {% for agent in all_employee_list %} 
-                                    <option value="{{agent.id}}">{{agent.name}}</option> 
+                                    <option value="{{agent.0}}">{{agent.1}}</option> 
                                     {% endfor %}
                                 </select>
                             </div>
@@ -477,7 +478,7 @@
                                     <select class="select2 form-control" name="edit_service_ag_1" id="edit_service_ag_1" required style="width: 100%;">
                                         <option value=""></option> 
                                         {% for agent in all_employee_list %} 
-                                        <option value="{{agent.id}}">{{agent.name}}</option> 
+                                        <option value="{{agent.0}}">{{agent.1}}</option> 
                                         {% endfor %}
                                     </select>
                                     <br>
@@ -494,7 +495,7 @@
                                     style="width: 100%;" onchange="makeFieldRequired(this)">
                                         <option value=""></option> 
                                         {% for agent in all_employee_list %} 
-                                        <option value="{{agent.id}}">{{agent.name}}</option> 
+                                        <option value="{{agent.0}}">{{agent.1}}</option> 
                                         {% endfor %}
                                     </select>
                                     <p class="text-danger text-right"><i id="edit_sa_rm_2" onclick="empty_service_field(this)" class="fas fa-times-circle"></i></p>
@@ -510,7 +511,7 @@
                                     <select class="select2 form-control" name="edit_service_ag_3" id="edit_service_ag_3" style="width: 100%;" onchange="makeFieldRequired(this)">
                                         <option value=""></option> 
                                         {% for agent in all_employee_list %} 
-                                        <option value="{{agent.id}}">{{agent.name}}</option> 
+                                        <option value="{{agent.0}}">{{agent.1}}</option> 
                                         {% endfor %}
                                     </select>
                                     <p class="text-danger text-right"><i id="edit_sa_rm_3" onclick="empty_service_field(this)" class="fas fa-times-circle"></i></p>
@@ -525,7 +526,7 @@
                                 <select name="edit_auditor_access_to" id="edit_auditor_access_to_id" multiple="multiple">
                                     <!-- <option value=""></option> -->
                                     {% for agent in all_employee_list %} 
-                                    <option value="{{agent.id}}">{{agent.name}}</option> 
+                                    <option value="{{agent.0}}">{{agent.1}}</option> 
                                     {% endfor %}
                                 </select>
                             </div>
@@ -672,6 +673,45 @@
     function viewMysteryDetail(mystery_id) {
         window.location.href = `/mystery_shopping/${mystery_id}/`;
         return false;
+    }
+
+    function fetch_invoice_data_from_zenoti(){
+        $('#cover-spin').show(0);
+        var invoice_error_span = document.getElementById('invoice_number_error');
+        var invoice_number = document.getElementById('id_invoice_number').value;
+        if(invoice_number.length == 0){
+            invoice_error_span.innerHTML = 'Please Enter Invoice Number';
+            return;
+        }
+        fetch("/get_invoice_detail_from_zenoti/", {
+            method: "POST",
+            body: JSON.stringify({
+                'invoice_number': invoice_number,
+            }),
+            // Adding headers to the request
+            headers: {
+                "Content-type": "application/json",
+                "X-CSRFToken": "{{ csrf_token }}",
+            },
+        })
+            .then((response) => {
+                // console.log(response);
+                if (response.redirected) {
+                    window.location.href = response.url;
+                    return;
+                }
+                return response.json();
+            })
+            .then((data) => {
+                // console.log("Success: ", data);
+                if (data.msg == 'success') {
+                    $('#cover-spin').hide(0);
+                }
+                else {
+                    $('#cover-spin').hide(0);
+                    alert('Something went wrong, Please try again after refreshing the page')
+                }
+            });
     }
 
     function empty_service_field(t){

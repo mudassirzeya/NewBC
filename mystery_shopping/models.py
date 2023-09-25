@@ -69,6 +69,8 @@ class MysteryShoppingDetail(models.Model):
         max_length=1000, null=True, blank=True)
     audit_status = models.CharField(max_length=200, null=True, blank=True)
     service_number = models.CharField(max_length=200, null=True, blank=True)
+    minimum_person_responsible = models.CharField(
+        max_length=10, null=True, blank=True)
 
     def __str__(self):
         return str(self.mystery_shopping.center.zenoti_data.display_name) + str(self.sequence)
