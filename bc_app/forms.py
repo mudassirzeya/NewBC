@@ -5,7 +5,7 @@ from .models import ExtendedZenotiEmployeesData, EmployeeRoster, ExtendedZenotiC
 class ExtendedUserDataForm(forms.ModelForm):
     class Meta:
         model = UserProfile
-        fields = ['associated_center', 'associated_role', 'office_start_time',
+        fields = ['associated_center', 'associated_kra', 'office_start_time',
                   'office_end_time', 'week_off', 'user_status',
                   'is_manager', 'roster_access']
 
@@ -16,7 +16,7 @@ class ExtendedUserDataForm(forms.ModelForm):
                 'style': "height: 36px;width: 100%;",
                 'required': 'required',
             }),
-            'associated_role': forms.SelectMultiple(attrs={
+            'associated_kra': forms.SelectMultiple(attrs={
                 'class': "form-control select2",
                 'multiple': "multiple",
                 'style': "height: 36px;width: 100%;",
@@ -65,7 +65,7 @@ class EmployeeRosterForm(forms.ModelForm):
                 'class': "form-control",
                 'required': 'required',
             }),
-            'associated_role': forms.Select(attrs={
+            'associated_kra': forms.Select(attrs={
                 'class': "form-control",
                 'required': "required",
             }),

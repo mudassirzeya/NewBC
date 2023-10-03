@@ -1,6 +1,6 @@
 from django.shortcuts import render, redirect
 from django.contrib.auth import authenticate, login, logout
-from .models import UserProfile, ZenotiCentersData, ZenotiEmployeesData, SecretKeyModel, ExtendedZenotiEmployeesData, AssociatedRoleOptions, WeekOffOptions, EmployeeRoster, ExtendedZenotiCenterData, EmployeesLeaveData, EmployeeScheduler, SectionOption, Position, OperationOption, ErrorLog, AuditAccess, SlrAudit, SLRSalonAuditAccess, SlrSalonImages, SlrDetail, MonthAudit, UserTypes, CentralAccess, AuditTypes
+from .models import UserProfile, ZenotiCentersData, ZenotiEmployeesData, SecretKeyModel, ExtendedZenotiEmployeesData, AssociatedRoleOptions, WeekOffOptions, EmployeeRoster, ExtendedZenotiCenterData, EmployeesLeaveData, EmployeeScheduler, KRACategory, KRADesignation, KRA, ErrorLog, AuditAccess, SlrAudit, SLRSalonAuditAccess, SlrSalonImages, SlrDetail, MonthAudit, UserTypes, CentralAccess, AuditTypes
 from mystery_shopping.models import MysteryShoppingDetail, MysteryShoppingOverview, MysteryChecklistPersonResponsible
 from .forms import ExtendedUserDataForm, EmployeeRosterForm, ExtendedZenotiCenterDataForm, SlrAuditForm
 from django.contrib import messages
@@ -122,37 +122,116 @@ def admin_zenotiCenter_page(request):
         all_center_list.append(temp)
 
     if request.method == "POST":
-        url = 'https://api.zenoti.com/v1/centers'
-        head = {"Authorization": "apikey "+api_key}
-        response = requests.request("GET", url, headers=head)
-        response_got = json.loads(response.text)
-        # print('response', response_got)
-        for center in response_got['centers']:
-            # print('each response', center['id'])
-            try:
-                existing_center = ZenotiCentersData.objects.get(
-                    zenoticenterId=center['id'])
-            except Exception:
-                existing_center = None
+        if 'get_center_from_zenoti' in request.POST:
+            url = 'https://api.zenoti.com/v1/centers'
+            head = {"Authorization": "apikey "+api_key}
+            response = requests.request("GET", url, headers=head)
+            response_got = json.loads(response.text)
+            # print('response', response_got)
+            for center in response_got['centers']:
+                # print('each response', center['id'])
+                try:
+                    existing_center = ZenotiCentersData.objects.get(
+                        zenoticenterId=center['id'])
+                except Exception:
+                    existing_center = None
 
-            if existing_center is None:
-                new_center = ZenotiCentersData.objects.create(
-                    zenoticenterId=center['id'],
-                    code=center['code'],
-                    name=center['name'],
-                    display_name=center['display_name'],
-                    address_1=center['address_info']['address_1'],
-                    address_2=center['address_info']['address_2'],
-                    city=center['address_info']['city'],
-                    zip_code=center['address_info']['zip_code'],
-                    state=center['state']['name'],
-                    country=center['country']['name'],
-                )
-                ExtendedZenotiCenterData.objects.create(
-                    zenoti_data=new_center,
-                    opening_time='09:00:00',
-                    closing_time='22:00:00'
-                )
+                if existing_center is None:
+                    new_center = ZenotiCentersData.objects.create(
+                        zenoticenterId=center['id'],
+                        code=center['code'],
+                        name=center['name'],
+                        display_name=center['display_name'],
+                        address_1=center['address_info']['address_1'],
+                        address_2=center['address_info']['address_2'],
+                        city=center['address_info']['city'],
+                        zip_code=center['address_info']['zip_code'],
+                        state=center['state']['name'],
+                        country=center['country']['name'],
+                    )
+                    ExtendedZenotiCenterData.objects.create(
+                        zenoti_data=new_center,
+                        opening_time='09:00:00',
+                        closing_time='22:00:00'
+                    )
+        if 'fetch_user_corresponding_to_center' in request.POST:
+            center_id = request.POST.get("fetch_user_corresponding_to_center")
+            try:
+                each_center = ZenotiCentersData.objects.get(id=int(center_id))
+            except Exception:
+                each_center = None
+            if each_center:
+                page_number = 1
+                while True:
+                    retry_count = 1
+                    c_id = each_center.zenoticenterId
+                    url = f"https://api.zenoti.com/v1/centers/{c_id}/employees?page={page_number}&size=100"
+                    head = {"Authorization": "apikey "+api_key}
+                    while True:
+                        try:
+                            response = requests.request(
+                                "GET", url, headers=head)
+                            break
+                        except Exception:
+                            time.sleep(5)
+                            retry_count = retry_count+1
+                            if retry_count > 5:
+                                break
+                    response_got = json.loads(response.text)
+                    employees_got = response_got.get('employees')
+                    # print(response_got)
+                    if not employees_got:
+                        break
+                    for employee in employees_got:
+                        try:
+                            existing_employee_user = User.objects.get(
+                                username=employee['personal_info']['user_name'])
+                        except Exception:
+                            existing_employee_user = None
+
+                        if existing_employee_user is None:
+                            new_user = User.objects.create_user(
+                                username=employee['personal_info']['user_name'],
+                                password=employee['id'],
+                                first_name=employee['personal_info']['first_name'],
+                                last_name=employee['personal_info']['last_name']
+                            )
+                            new_userprofile = UserProfile.objects.create(
+                                user=new_user,
+                                password=employee['id'],
+                                user_type='staff'
+                            )
+                            zenoti_employe_data = ZenotiEmployeesData.objects.create(
+                                user=new_userprofile,
+                                employee_code=employee['code'],
+                                employee_id=employee['id'],
+                                employee_name=employee['personal_info']['name'],
+                                gender=employee['personal_info']['gender'],
+                                job_info=employee['job_info']['name'],
+                            )
+                            zenoti_employe_data.zenoti_center.add(each_center)
+                            ExtendedZenotiEmployeesData.objects.create(
+                                zenoti_data=zenoti_employe_data,
+                                office_start_time='09:00:00',
+                                office_end_time='21:00:00'
+                            )
+                        else:
+                            try:
+                                existing_employee = ZenotiEmployeesData.objects.get(
+                                    employee_id=employee['id'])
+                            except Exception:
+                                existing_employee = None
+
+                            if existing_employee:
+                                existing_employee.employee_code = employee['code']
+                                existing_employee.employee_name = employee['personal_info']['name']
+                                existing_employee.gender = employee['personal_info']['gender']
+                                existing_employee.job_info = employee['job_info']['name']
+                                existing_employee.save()
+                                if not each_center in existing_employee.zenoti_center.all():
+                                    existing_employee.zenoti_center.add(
+                                        each_center)
+                    page_number = page_number+1
         return redirect('zenotiCenter_page')
     context = {'all_center': all_center_list, 'staffProfile': staffProfile}
     return render(request, "admin_zenotiCentre.html", context)
@@ -475,6 +554,94 @@ def edit_admin_modal_popup(request):
 
         # user_json = serializers.serialize('json', [audit_user_data])
         return JsonResponse({"msg": "success", "user_json": audit_user_data})
+
+
+@login_required(login_url='user_login')
+def kra_list_page(request):
+    user = request.user
+    staffProfile = UserProfile.objects.get(user=user)
+    if not staffProfile.is_super_admin:
+        return redirect('/')
+    all_kra_category = KRACategory.objects.all()
+    all_kra_designtion = KRADesignation.objects.all()
+    all_kra = KRA.objects.all()
+    if request.method == "POST":
+        if 'add_new_category' in request.POST:
+            category_name = request.POST.get("category_name")
+            KRACategory.objects.create(
+                category=category_name
+            )
+        if 'add_new_designation' in request.POST:
+            designation_name = request.POST.get("designation_name")
+            category_id = request.POST.get("select_category")
+            try:
+                category_query = KRACategory.objects.get(id=int(category_id))
+            except Exception:
+                category_query = None
+            KRADesignation.objects.create(
+                category=category_query,
+                designation=designation_name
+            )
+        if 'add_new_kra' in request.POST:
+            kra_name = request.POST.get("kra_name")
+            designation_id = request.POST.get("select_designation")
+            start = request.POST.get("start_time")
+            end = request.POST.get("end_time")
+            try:
+                designation_query = KRADesignation.objects.get(
+                    id=int(designation_id))
+            except Exception:
+                designation_query = None
+            KRA.objects.create(
+                kra=kra_name,
+                designation=designation_query,
+                start_time=start,
+                end_time=end
+            )
+        if 'edit_kra_data' in request.POST:
+            kra_id = request.POST.get("kra_pk")
+            kra_name = request.POST.get("edit_kra_name")
+            designation_id = request.POST.get("edit_select_designation")
+            start = request.POST.get("edit_start_time")
+            end = request.POST.get("edit_end_time")
+            try:
+                kra_query = KRA.objects.get(id=int(kra_id))
+            except Exception:
+                kra_query = None
+            try:
+                designation_query = KRADesignation.objects.get(
+                    id=int(designation_id))
+            except Exception:
+                designation_query = None
+            if kra_query:
+                kra_query.kra = kra_name
+                if designation_query:
+                    kra_query.designation = designation_query
+                kra_query.start_time = start
+                kra_query.end_time = end
+                kra_query.save()
+        return redirect('kra_lists')
+    context = {'staffProfile': staffProfile,
+               'all_kra_category': all_kra_category,
+               'all_kra_designtion': all_kra_designtion,
+               'all_kra': all_kra}
+    return render(request, "kra_list_page.html", context)
+
+
+def edit_kra_popup_data(request):
+    if request.method == "POST":
+        data = json.loads(request.body)
+        print(data)
+        got_kra_id = data['data_obj']
+        try:
+            kra_query = KRA.objects.get(
+                id=int(got_kra_id))
+        except Exception:
+            kra_query = None
+        kra_query_json = serializers.serialize('json', [kra_query])
+        print(kra_query_json)
+        return JsonResponse({"msg": "success",
+                            "kra_json": json.loads(kra_query_json)})
 
 
 compliance_category_percentage = {

@@ -25,34 +25,34 @@ class WeekOffOptions(models.Model):
         return str(self.option)
 
 
-class SectionOption(models.Model):
-    option = models.CharField(max_length=100, null=True, blank=True)
+class KRACategory(models.Model):
+    category = models.CharField(max_length=100, null=True, blank=True)
 
     def __str__(self):
-        return str(self.option)
+        return str(self.category)
 
 
-class OperationOption(models.Model):
-    option = models.CharField(max_length=100, null=True, blank=True)
-
-    def __str__(self):
-        return str(self.option)
-
-
-class Position(models.Model):
-    name = models.CharField(max_length=100, null=True, blank=True)
-    section = models.ForeignKey(
-        SectionOption, null=True, blank=True, on_delete=models.CASCADE
+class KRADesignation(models.Model):
+    category = models.ForeignKey(
+        KRACategory, null=True, blank=True, on_delete=models.CASCADE
     )
-    operation = models.ForeignKey(
-        OperationOption, null=True, blank=True, on_delete=models.CASCADE
+    designation = models.CharField(max_length=100, null=True, blank=True)
+
+    def __str__(self):
+        return str(self.designation)
+
+
+class KRA(models.Model):
+    kra = models.CharField(max_length=100, null=True, blank=True)
+    designation = models.ForeignKey(
+        KRADesignation, null=True, blank=True, on_delete=models.CASCADE
     )
     start_time = models.TimeField(max_length=100, null=True, blank=True)
     end_time = models.TimeField(max_length=100, null=True, blank=True)
     added_date = models.DateTimeField(auto_now_add=True, null=True, blank=True)
 
     def __str__(self):
-        return str(self.name)
+        return str(self.kra)
 
 
 # this center data is what we are getting from zenoti
@@ -84,7 +84,7 @@ class ExtendedZenotiCenterData(models.Model):
     opening_time = models.TimeField(max_length=100, null=True, blank=True)
     closing_time = models.TimeField(max_length=100, null=True, blank=True)
     closed_on = models.ManyToManyField(WeekOffOptions, blank=True)
-    position = models.ManyToManyField(Position, blank=True)
+    associated_kra = models.ManyToManyField(KRA, blank=True)
     center_status = models.CharField(
         max_length=200, null=True, blank=True, default='Active', choices=CENTRESTATUS)
     added_date = models.DateTimeField(auto_now_add=True, null=True, blank=True)
@@ -120,8 +120,8 @@ class UserProfile(models.Model):
     roster_access = models.BooleanField(default=False, null=True, blank=True)
     associated_center = models.ManyToManyField(
         ExtendedZenotiCenterData, blank=True)
-    associated_role = models.ManyToManyField(
-        Position, blank=True)
+    associated_kra = models.ManyToManyField(
+        KRA, blank=True)
     office_start_time = models.TimeField(max_length=100, null=True, blank=True)
     office_end_time = models.TimeField(max_length=100, null=True, blank=True)
     week_off = models.ManyToManyField(WeekOffOptions, blank=True)
@@ -173,8 +173,8 @@ class ExtendedZenotiEmployeesData(models.Model):
     )
     associated_center = models.ManyToManyField(
         ExtendedZenotiCenterData, blank=True)
-    associated_role = models.ManyToManyField(
-        Position, blank=True)
+    associated_kra = models.ManyToManyField(
+        KRA, blank=True)
     office_start_time = models.TimeField(max_length=100, null=True, blank=True)
     office_end_time = models.TimeField(max_length=100, null=True, blank=True)
     week_off = models.ManyToManyField(WeekOffOptions, blank=True)
@@ -212,8 +212,8 @@ class EmployeeRoster(models.Model):
     )
     employee = models.ForeignKey(
         UserProfile, blank=True, null=True, on_delete=models.CASCADE)
-    associated_role = models.ForeignKey(
-        Position, blank=True, null=True, on_delete=models.CASCADE)
+    associated_kra = models.ForeignKey(
+        KRA, blank=True, null=True, on_delete=models.CASCADE)
     appoint_date = models.DateField(auto_now_add=False, null=True, blank=True)
     office_start_time = models.TimeField(max_length=100, null=True, blank=True)
     office_end_time = models.TimeField(max_length=100, null=True, blank=True)
@@ -253,8 +253,8 @@ class EmployeeScheduler(models.Model):
     )
     employee = models.ForeignKey(
         UserProfile, blank=True, null=True, on_delete=models.CASCADE)
-    associated_role = models.ManyToManyField(
-        Position, blank=True)
+    associated_kra = models.ManyToManyField(
+        KRA, blank=True)
     status = models.CharField(
         max_length=200, null=True, blank=True, choices=STATUS)
     remark = models.CharField(

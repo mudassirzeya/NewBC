@@ -299,8 +299,8 @@ def mystery_shopping_overview(request):
         sanitized_last_name = sanitize_name(each_user.user.last_name)
         tempUserObj.append(f"{sanitized_first_name} {sanitized_last_name}")
         kra_list = []
-        for each_role in each_user.associated_role.all():
-            kra_list.append(each_role.name)
+        for each_role in each_user.associated_kra.all():
+            kra_list.append(each_role.kra)
         tempUserObj.append(kra_list)
         center_list = []
         for each_center in each_user.associated_center.all():
@@ -1066,8 +1066,8 @@ def mystery_shopping_detail(request, pk):
         sanitized_last_name = sanitize_name(each_user.user.last_name)
         tempUserObj.append(f"{sanitized_first_name} {sanitized_last_name}")
         kra_list = []
-        for each_role in each_user.associated_role.all():
-            kra_list.append(each_role.name)
+        for each_role in each_user.associated_kra.all():
+            kra_list.append(each_role.kra)
         tempUserObj.append(kra_list)
         center_list = []
         for each_center in each_user.associated_center.all():
