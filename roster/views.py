@@ -101,8 +101,9 @@ def roster_dashboard_page(request):
         this_center_kra_with_location = this_center_kra_with_location.filter(
             location__in=searched_location)
 
-    this_center_kra = [
+    extract_this_center_kra_list = [
         center_kra.kra for center_kra in this_center_kra_with_location]
+    this_center_kra = list(set(extract_this_center_kra_list))
     if not '0' in selected_location:
         all_roster = all_roster.filter(associated_kra__in=this_center_kra)
     center_kra_json = {}
