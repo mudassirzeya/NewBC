@@ -1,8 +1,9 @@
 from django.shortcuts import render, redirect
 from django.contrib.auth import authenticate, login, logout
-from .models import UserProfile, ZenotiCentersData, ZenotiEmployeesData, SecretKeyModel, ExtendedZenotiEmployeesData, AssociatedRoleOptions, WeekOffOptions, EmployeeRoster, ExtendedZenotiCenterData, EmployeesLeaveData, EmployeeScheduler, KRACategory, KRADesignation, KRA, ErrorLog, AuditAccess, SlrAudit, SLRSalonAuditAccess, SlrSalonImages, SlrDetail, MonthAudit, UserTypes, CentralAccess, AuditTypes
+from .models import UserProfile, ZenotiCentersData, ZenotiEmployeesData, SecretKeyModel, ExtendedZenotiEmployeesData, AssociatedRoleOptions, WeekOffOptions, ExtendedZenotiCenterData, EmployeesLeaveData, KRACategory, KRADesignation, KRA, AuditAccess, SlrAudit, SLRSalonAuditAccess, SlrSalonImages, SlrDetail, MonthAudit, UserTypes, CentralAccess, AuditTypes, CenterKra, Location
 from mystery_shopping.models import MysteryShoppingDetail, MysteryShoppingOverview, MysteryChecklistPersonResponsible
-from .forms import ExtendedUserDataForm, EmployeeRosterForm, ExtendedZenotiCenterDataForm, SlrAuditForm
+from .forms import ExtendedUserDataForm, ExtendedZenotiCenterDataForm, SlrAuditForm
+from roster.models import EmployeeRoster, EmployeeScheduler
 from django.contrib import messages
 from django.http import JsonResponse, HttpResponse
 from django.core import serializers
@@ -101,22 +102,20 @@ def admin_zenotiCenter_page(request):
     user = request.user
     staffProfile = UserProfile.objects.get(user=user)
     usertype = staffProfile.user_type
-    all_center = ZenotiCentersData.objects.all()
+    all_center = ExtendedZenotiCenterData.objects.all()
     all_center_list = []
     for each_center in all_center:
-        extended_center_data = ExtendedZenotiCenterData.objects.get(
-            zenoti_data=each_center)
-        this_center_manager = ExtendedZenotiEmployeesData.objects.filter(
-            associated_center=extended_center_data, is_manager=True)
+        this_center_manager = UserProfile.objects.filter(
+            associated_center=each_center, is_manager=True)
         temp = {
             'id': each_center.id,
-            'code': each_center.code,
-            'name': each_center.name,
-            'display_name': each_center.display_name,
-            'address': f"{each_center.address_1 or ''}, {each_center.address_2 or ''}, "
-            f"{each_center.zip_code or ''}, {each_center.city or ''}, "
-            f"{each_center.state or ''}, {each_center.country or ''}",
-            'manager': ', '.join(manager.zenoti_data.employee_name for manager in this_center_manager),
+            'code': each_center.zenoti_data.code,
+            'name': each_center.zenoti_data.name,
+            'display_name': each_center.zenoti_data.display_name,
+            'address': f"{each_center.zenoti_data.address_1 or ''}, {each_center.zenoti_data.address_2 or ''}, "
+            f"{each_center.zenoti_data.zip_code or ''}, {each_center.zenoti_data.city or ''}, "
+            f"{each_center.zenoti_data.state or ''}, {each_center.zenoti_data.country or ''}",
+            'manager': ', '.join(manager.user.first_name + ' ' + manager.user.last_name for manager in this_center_manager),
         }
         # print(temp)
         all_center_list.append(temp)
@@ -157,14 +156,16 @@ def admin_zenotiCenter_page(request):
         if 'fetch_user_corresponding_to_center' in request.POST:
             center_id = request.POST.get("fetch_user_corresponding_to_center")
             try:
-                each_center = ZenotiCentersData.objects.get(id=int(center_id))
+                center_query = ExtendedZenotiCenterData.objects.get(
+                    id=int(center_id))
             except Exception:
-                each_center = None
-            if each_center:
+                center_query = None
+
+            if center_query:
                 page_number = 1
                 while True:
                     retry_count = 1
-                    c_id = each_center.zenoticenterId
+                    c_id = center_query.zenoti_data.zenoticenterId
                     url = f"https://api.zenoti.com/v1/centers/{c_id}/employees?page={page_number}&size=100"
                     head = {"Authorization": "apikey "+api_key}
                     while True:
@@ -209,7 +210,8 @@ def admin_zenotiCenter_page(request):
                                 gender=employee['personal_info']['gender'],
                                 job_info=employee['job_info']['name'],
                             )
-                            zenoti_employe_data.zenoti_center.add(each_center)
+                            zenoti_employe_data.zenoti_center.add(
+                                center_query.zenoti_data)
                             ExtendedZenotiEmployeesData.objects.create(
                                 zenoti_data=zenoti_employe_data,
                                 office_start_time='09:00:00',
@@ -230,11 +232,58 @@ def admin_zenotiCenter_page(request):
                                 existing_employee.save()
                                 if not each_center in existing_employee.zenoti_center.all():
                                     existing_employee.zenoti_center.add(
-                                        each_center)
+                                        center_query.zenoti_data)
                     page_number = page_number+1
         return redirect('zenotiCenter_page')
     context = {'all_center': all_center_list, 'staffProfile': staffProfile}
     return render(request, "admin_zenotiCentre.html", context)
+
+
+@login_required(login_url='user_login')
+def admin_center_profile_page(request, pk):
+    user = request.user
+    staffProfile = UserProfile.objects.get(user=user)
+    try:
+        extended_center_detail = ExtendedZenotiCenterData.objects.get(
+            id=int(pk))
+    except Exception:
+        extended_center_detail = None
+    extended_employee_data = ExtendedZenotiEmployeesData.objects.filter(
+        associated_center=extended_center_detail)
+    form = ExtendedZenotiCenterDataForm(
+        request.POST or None, instance=extended_center_detail)
+    all_kra_list = KRA.objects.all()
+    all_kra_with_location_of_this_center = CenterKra.objects.filter(
+        center=extended_center_detail)
+    all_location_list = Location.objects.all()
+    if request.method == 'POST':
+        if 'extra_data_form' in request.POST:
+            if form.is_valid():
+                form.save()
+        if 'add_kra_in_center_profile' in request.POST:
+            kra_id = request.POST.get("selected_kra")
+            kra_location_id = request.POST.get("selected_location")
+            try:
+                kra_query = KRA.objects.get(id=int(kra_id))
+            except Exception:
+                kra_query = None
+            try:
+                location_query = Location.objects.get(id=int(kra_location_id))
+            except Exception:
+                location_query = None
+            CenterKra.objects.create(
+                center=extended_center_detail,
+                kra=kra_query,
+                location=location_query
+            )
+        return redirect('body_craft_center_profile', pk=pk)
+    context = {'center_detail': extended_center_detail.zenoti_data,
+               'form': form, 'staffProfile': staffProfile,
+               'extended_employee_data': extended_employee_data,
+               'all_kra_list': all_kra_list,
+               'all_kra_with_location_of_this_center': all_kra_with_location_of_this_center,
+               'all_location_list': all_location_list}
+    return render(request, 'admin_center_profile.html', context)
 
 
 @login_required(login_url='user_login')
@@ -337,6 +386,7 @@ def employee_profile_page(request, pk):
     all_centers = ZenotiCentersData.objects.all()
     all_roles = AssociatedRoleOptions.objects.all()
     all_weekoff = WeekOffOptions.objects.all()
+    all_location_list = Location.objects.all()
     if request.method == 'POST':
         if 'extra_data_form' in request.POST:
             if form.is_valid():
@@ -414,6 +464,7 @@ def employee_profile_page(request, pk):
                'employee_detail': employee_detail, 'form': form,
                'all_weekoff': all_weekoff, 'all_roles': all_roles,
                'all_centers': all_centers,
+               'all_location_list': all_location_list,
                'employee_leave_detail': employee_leave_detail,
                'is_roster': is_roster}
     return render(request, "admin_employee_profile.html", context)

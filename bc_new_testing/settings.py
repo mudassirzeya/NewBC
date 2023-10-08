@@ -40,6 +40,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'bc_app',
     'mystery_shopping',
+    'roster',
 ]
 
 MIDDLEWARE = [

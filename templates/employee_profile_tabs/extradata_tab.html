@@ -23,13 +23,7 @@
                     </div>
                     <div class="col-md-2"> <strong>Associated Location</strong>
                         <br>
-                        <select class="form-control select2" name="select_location" id="select_location_id">
-                            <option value=""></option>
-                            <option value="Salon">Salon</option>
-                            <option value="Skin">Skin</option>
-                            <option value="Clinic">Clinic</option>
-                            <option value="Central">Central</option>
-                        </select>
+                        {{form.associated_location}}
                     </div>
                 </div>
             </div>
@@ -155,7 +149,7 @@
                 // dropdownParent: $('#extra_data_div')
             });
 
-            $('#select_location_id').select2({
+            $('#id_associated_location').select2({
             dropdownAutoWidth: true,
             multiple: true,
             width: '100%',

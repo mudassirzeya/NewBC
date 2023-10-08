@@ -1,0 +1,55 @@
+{% load static %} 
+<div class="p-4" id="">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="table-responsive">
+                <table class="table no-wrap user-table mb-0">
+                    <thead>
+                        <tr>
+                            <th scope="col" class="border-0 text-uppercase font-medium pl-4"> Name </th>
+                            <th scope="col" class="border-0 text-uppercase font-medium"> KRA </th>
+                            <th scope="col" class="border-0 text-uppercase font-medium"> Office Time </th>
+                            <th scope="col" class="border-0 text-uppercase font-medium"> Week Off </th>
+                        </tr>
+                    </thead>
+                    <tbody> 
+                        {% for user in extended_employee_data %} 
+                        <tr>
+                            <td class="pl-4">
+                                <div class="d-flex align-items-start">
+                                    <img src="{% static 'images/unisex.jpg' %}" class="rounded-circle" width="30">
+                                    <div class="ml-2">
+                                        <h5 class="font-weight-medium mb-0">
+                                            <a href="{% url 'body_craft_staff_profile' user.zenoti_data.id %}">
+                                                {{user.zenoti_data.employee_name|default_if_none:'' }}
+                                            </a>
+                                            
+                                        </h5>
+                                    </div>
+                                </div>
+                            </td>
+                            <td>
+                                <span class="text-muted">
+                                    {% for kra in user.associated_role.all %}
+                                        {{kra.name}} {% if not forloop.last %}, {% endif %}
+                                    {% endfor %}
+                                </span>
+                            </td>
+                            <td>
+                                <span class="text-muted">
+                                    {{user.office_start_time|default_if_none:'' }} - {{user.office_end_time|default_if_none:'' }}
+                                </span>
+                            </td>
+                            <td>
+                                <span class="text-muted">
+                                    {% for week in user.week_off.all %} {{week.option}} {% if not forloop.last %}, {% endif %} {% endfor %}
+                                </span>
+                            </td>
+                        </tr> 
+                        {% endfor %} 
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>

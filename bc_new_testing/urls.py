@@ -20,4 +20,5 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     path('', include('bc_app.urls')),
     path('', include('mystery_shopping.urls')),
+    path('', include('roster.urls')),
 ]

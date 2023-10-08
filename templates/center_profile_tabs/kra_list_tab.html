@@ -1,0 +1,57 @@
+{% load static %}
+<div class="row p-4">
+    <div class="col-6">
+        <table class="table">
+            <thead>
+                <th>KRA</th>
+                <th>Location</th>
+            </thead>
+            <tbody>
+                {% for each_kra in all_kra_with_location_of_this_center %}
+                <tr>
+                    <td>
+                        {{each_kra.kra}}
+                    </td>
+                    <td>
+                        {{each_kra.location.location}}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    <div class="col-6">
+        <form method="post">
+            {% csrf_token %}
+            <div class="row">
+                <div class="col">
+                    <div class="form-group mb-4">
+                        <label class="mr-sm-2" for="inlineFormCustomSelect">Select KRA</label>
+                        <select class="form-control" name="selected_kra" id="">
+                            <option value=""></option>
+                            {% for each_kra in all_kra_list %}
+                            <option value="{{each_kra.id}}">{{each_kra.kra}}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+                <div class="col">
+                    <div class="form-group mb-4">
+                        <label class="mr-sm-2" for="inlineFormCustomSelect">Select Location</label>
+                        <select class="form-control" name="selected_location" id="">
+                            <option value=""></option>
+                            {% for each_location in all_location_list %}
+                            <option value="{{each_location.id}}">{{each_location.location}}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+                <div class="col-2">
+                    <div class="mt-2"><br>
+                        <button class="btn btn-success" name="add_kra_in_center_profile" type="submit">Add</button>
+                    </div>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
