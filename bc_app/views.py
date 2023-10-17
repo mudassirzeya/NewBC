@@ -863,7 +863,9 @@ def save_selected_user_responsible(request):
                     remark=get_remark,
                     kra=get_kra
                 )
-                if len(all_person_responsible_query_of_this_checklist) > int(person_resp_query.mystery_checklist.minimum_person_responsible):
+                print('kkk', len(all_person_responsible_query_of_this_checklist), int(
+                    checklist_query.minimum_person_responsible))
+                if len(all_person_responsible_query_of_this_checklist) >= int(checklist_query.minimum_person_responsible):
                     person_resp_query.mystery_checklist.audit_status = 'Completed'
                 else:
                     person_resp_query.mystery_checklist.audit_status = 'Pending'
@@ -905,15 +907,19 @@ def delete_user_response(request):
                     id=int(user_resp_id))
             except Exception:
                 user_resp_query = None
-            try:
-                all_user_resp_query = MysteryChecklistPersonResponsible.objects.filter(
-                    mystery_checklist=user_resp_query.mystery_checklist)
-            except Exception:
-                all_user_resp_query = None
-            if len(all_user_resp_query) == 1:
+
+            # storing value so can use it after deleting user_resp_query
+            mystery_checklist_query = user_resp_query.mystery_checklist
+            min_person_responsible = int(
+                mystery_checklist_query.minimum_person_responsible)
+
+            if user_resp_query:
+                user_resp_query.delete()
+            all_person_responsible_query_of_this_checklist = MysteryChecklistPersonResponsible.objects.filter(
+                mystery_checklist=mystery_checklist_query)
+            if len(all_person_responsible_query_of_this_checklist) < int(min_person_responsible):
                 user_resp_query.mystery_checklist.audit_status = 'Pending'
                 user_resp_query.mystery_checklist.save()
-            user_resp_query.delete()
 
             return JsonResponse({"msg": "success"})
         else:
