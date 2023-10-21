@@ -142,6 +142,8 @@ class UserProfile(models.Model):
         ExtendedZenotiCenterData, blank=True)
     associated_kra = models.ManyToManyField(
         KRA, blank=True)
+    primary_kra = models.ForeignKey(
+        KRA, related_name='primary_kra', blank=True, null=True, on_delete=models.SET_NULL)
     associated_location = models.ManyToManyField(
         Location, blank=True)
     office_start_time = models.TimeField(max_length=100, null=True, blank=True)

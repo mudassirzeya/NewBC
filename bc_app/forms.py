@@ -5,7 +5,7 @@ from .models import ExtendedZenotiEmployeesData, ExtendedZenotiCenterData, SlrAu
 class ExtendedUserDataForm(forms.ModelForm):
     class Meta:
         model = UserProfile
-        fields = ['associated_center', 'associated_kra',
+        fields = ['associated_center', 'associated_kra', 'primary_kra',
                   'associated_location', 'office_start_time',
                   'office_end_time', 'week_off', 'user_status',
                   'is_manager', 'roster_access']
@@ -22,6 +22,10 @@ class ExtendedUserDataForm(forms.ModelForm):
                 'multiple': "multiple",
                 'style': "height: 36px;width: 100%;",
                 # 'required': "required"
+            }),
+            'primary_kra': forms.Select(attrs={
+                'class': "form-control",
+                'required': "required"
             }),
             'associated_location': forms.SelectMultiple(attrs={
                 'class': "form-control select2",
